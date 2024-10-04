@@ -3,6 +3,8 @@ from enum import Enum
 import numpy as np
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 
 """
@@ -31,6 +33,9 @@ class LinearRegression:
             raise ValueError("batch_size should be specified for MBGD.")
 
         self.w = np.zeros(dim + 1)
+        
+        self.loss_history = None
+        self.w_history = None
     
     @staticmethod
     def extend_X(X):
@@ -71,15 +76,14 @@ class LinearRegression:
         if self.tolerance is not None:
             last_loss = np.inf
 
-        loss_history = []
+        self.w_history = []
+        self.loss_history = []
 
         for i in range(self.max_iterations):
             _X, _t = X, t
             if self.optimizer_type == OptimizerType.SGD:
                 indices = np.random.randint(0, X.shape[0])
                 _X, _t = X[indices:(indices + 1)], t[indices:(indices + 1)]
-            # elif self.optimizer_type == OptimizerType.BGD:
-            #     pass
             elif self.optimizer_type == OptimizerType.MBGD:
                 indices = np.random.choice(X.shape[0], self.batch_size, replace=False)
                 _X, _t = X[indices], t[indices]
@@ -87,15 +91,15 @@ class LinearRegression:
             grads = self.gradients(_X, _t)
             self.w -= self.learning_rate * grads
             new_loss = self.loss(X, t)
-            loss_history.append(new_loss)
+
+            self.w_history.append(self.w.copy())
+            self.loss_history.append(new_loss)
 
             if self.tolerance is not None:
                 if np.abs(new_loss - last_loss) < self.tolerance:
                     print(f"Converged at iteration {i}.")
                     break
                 last_loss = new_loss
-            
-        return loss_history
 
 
 """
@@ -120,12 +124,39 @@ def random_split(X, y, test_size = 0.2, seed = None):
 """
     Test the code
 """
+def plot_surface_path(X, t, w_history):
+    def loss(w, X, t):
+        return np.mean((t - LinearRegression.extend_X(X) @ w) ** 2)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Surface
+    w0_vals = np.linspace(-10, 30, 100)
+    w1_vals = np.linspace(0, 2, 100)
+    W0, W1 = np.meshgrid(w0_vals, w1_vals)
+    Z = np.zeros_like(W0)
+    for i in range(W0.shape[0]):
+        for j in range(W0.shape[1]):
+            w = np.array([W0[i, j], W1[i, j]])
+            Z[i, j] = loss(w, X, t)
+    ax.plot_surface(W0, W1, Z, cmap=cm.coolwarm, alpha=0.6)
+
+    # Descent path
+    w_history = np.array(w_history)
+    ax.plot(w_history[:, 0], w_history[:, 1], [loss(w, X, t) for w in w_history], 'r-o', markersize=5)
+
+    ax.set_xlabel('w_0')
+    ax.set_ylabel('w_1')
+    ax.set_zlabel('Loss')
+    plt.show()
+
 if __name__ == "__main__":
     # Generate data (modified from HA-02.pdf)
     N = 100
     X_train = np.arange(N).reshape(N, 1)
     a, b = 1, 10
-    y_train = a * X_train + b + np.random.normal(0, 1, size = X_train.shape) # TODO 1, 5
+    y_train = a * X_train + b + np.random.normal(0, 5, size = X_train.shape)
     y_train = y_train.reshape(-1)
 
     # Split the data
@@ -136,24 +167,29 @@ if __name__ == "__main__":
         dim = 1,
         learning_rate = 0.0001,
         max_iterations = 100000,
-        tolerance = 5e-5,
+        tolerance = 1e-5,
         normalization_type = NormalizationType.NONE,
         optimizer_type = OptimizerType.MBGD,
         batch_size = 10
     )
-    loss_history = model.optimize(X_train, y_train)
+    model.optimize(X_train, y_train)
 
-    # Print the results
+    # Optimization results
     print(model.w)
 
+    # Closed-form solution
     X_ext = LinearRegression.extend_X(X_train)
     print(np.linalg.inv(X_ext.T @ X_ext) @ X_ext.T @ y_train)
 
-    # Plot the results
+    # Optimized line
     # plt.scatter(X_train, y_train, color = 'blue')
     # plt.plot(X_train, model.predict(X_train), color = 'red')
     # plt.show()
 
-    plt.plot(loss_history)
-    plt.show()
+    # Loss curve
+    # plt.plot(loss_history)
+    # plt.show()
+
+    # Surface plot
+    plot_surface_path(X_train, y_train, model.w_history)
 
