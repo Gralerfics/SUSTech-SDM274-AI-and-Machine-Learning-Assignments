@@ -46,6 +46,10 @@ class LinearRegression:
     @staticmethod
     def mean_normalization(X):
         pass
+        # X_mean, X_std = np.mean(X, axis = 0), np.std(X, axis = 0)
+        # with np.errstate(divide = 'ignore', invalid = 'ignore'):
+        #     X_normalized = (X - X_mean) / X_std
+        # return np.where(np.isnan(X_normalized), X, X_normalized)
 
     def predict(self, X):
         X_ext = self.extend_X(X)
@@ -67,6 +71,8 @@ class LinearRegression:
         if self.tolerance is not None:
             last_loss = np.inf
 
+        loss_history = []
+
         for i in range(self.max_iterations):
             _X, _t = X, t
             if self.optimizer_type == OptimizerType.SGD:
@@ -81,12 +87,15 @@ class LinearRegression:
             grads = self.gradients(_X, _t)
             self.w -= self.learning_rate * grads
             new_loss = self.loss(X, t)
+            loss_history.append(new_loss)
 
             if self.tolerance is not None:
                 if np.abs(new_loss - last_loss) < self.tolerance:
                     print(f"Converged at iteration {i}.")
                     break
                 last_loss = new_loss
+            
+        return loss_history
 
 
 """
@@ -125,13 +134,14 @@ if __name__ == "__main__":
     # Initialize the linear regression model
     model = LinearRegression(
         dim = 1,
-        learning_rate = 0.0005,
+        learning_rate = 0.0001,
         max_iterations = 100000,
-        tolerance = 1e-5,
-        use_min_max_normalization = True,
-        optimizer_type = OptimizerType.BGD
+        tolerance = 5e-5,
+        normalization_type = NormalizationType.NONE,
+        optimizer_type = OptimizerType.MBGD,
+        batch_size = 10
     )
-    model.optimize(X_train, y_train)
+    loss_history = model.optimize(X_train, y_train)
 
     # Print the results
     print(model.w)
@@ -140,7 +150,10 @@ if __name__ == "__main__":
     print(np.linalg.inv(X_ext.T @ X_ext) @ X_ext.T @ y_train)
 
     # Plot the results
-    plt.scatter(X_train, y_train, color = 'blue')
-    plt.plot(X_train, model.predict(X_train), color = 'red')
+    # plt.scatter(X_train, y_train, color = 'blue')
+    # plt.plot(X_train, model.predict(X_train), color = 'red')
+    # plt.show()
+
+    plt.plot(loss_history)
     plt.show()
 
