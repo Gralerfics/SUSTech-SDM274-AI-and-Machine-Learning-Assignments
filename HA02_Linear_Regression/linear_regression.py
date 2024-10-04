@@ -3,7 +3,6 @@ from enum import Enum
 import numpy as np
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 
 
@@ -159,7 +158,7 @@ def plot_results(model, X, t):
 
     # Plot
     fig = plt.figure(figsize = (30, 9))
-    fig.suptitle(f'Linear Regression\n(learning_rate = {model.learning_rate}, max_iterations = {model.max_iterations}, tolerance = {model.tolerance}, normalization_type = {model.normalization_type}, optimizer_type = {model.optimizer_type}, batch_size = {model.batch_size})', fontsize = 16)
+    fig.suptitle(f'Linear Regression\n(learning_rate = {model.learning_rate}, max_iterations = {model.max_iterations}, tolerance = {model.tolerance}, normalization_type = {model.normalization_type}, optimizer_type = {model.optimizer_type}{", batch_size = " + str(model.batch_size) if model.optimizer_type == OptimizerType.MBGD else ""})', fontsize = 16)
 
     # Surface, Descent path & Optimal point
     ax1 = fig.add_subplot(131, projection = '3d')
@@ -226,7 +225,7 @@ if __name__ == "__main__":
         tolerance = 1e-6,
         normalization_type = NormalizationType.MEAN,
         optimizer_type = OptimizerType.SGD,
-        # batch_size = 16
+        batch_size = 16
     )
     model.optimize(X_train, y_train)
 
