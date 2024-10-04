@@ -41,65 +41,88 @@ class LinearRegression:
     def extend_X(X):
         return np.hstack([np.ones((X.shape[0], 1)), X])
 
-    @staticmethod
-    def min_max_normalization(X):
-        X_min, X_max = np.min(X, axis = 0), np.max(X, axis = 0)
+    def _min_max_normalize(self, X, record_params = False):
+        if record_params:
+            self.X_min, self.X_max = np.min(X, axis = 0), np.max(X, axis = 0)
         with np.errstate(divide = 'ignore', invalid = 'ignore'):
-            X_normalized = (X - X_min) / (X_max - X_min)
+            X_normalized = (X - self.X_min) / (self.X_max - self.X_min)
         return np.where(np.isnan(X_normalized), X, X_normalized)
 
-    @staticmethod
-    def mean_normalization(X):
-        pass
-        # X_mean, X_std = np.mean(X, axis = 0), np.std(X, axis = 0)
-        # with np.errstate(divide = 'ignore', invalid = 'ignore'):
-        #     X_normalized = (X - X_mean) / X_std
-        # return np.where(np.isnan(X_normalized), X, X_normalized)
-
-    def predict(self, X):
-        X_ext = self.extend_X(X)
-        return X_ext @ self.w
+    def _mean_normalize(self, X, record_params = False): # TODO
+        if record_params:
+            self.X_mean, self.X_std = np.mean(X, axis = 0), np.std(X, axis = 0)
+        with np.errstate(divide = 'ignore', invalid = 'ignore'):
+            X_normalized = (X - self.X_mean) / self.X_std
+        return np.where(np.isnan(X_normalized), X, X_normalized)
     
-    def loss(self, X, t):
-        return np.mean((t - self.predict(X)) ** 2)
+    def _normalize(self, X, record_params = False):
+        if self.normalization_type == NormalizationType.MINMAX:
+            return self._min_max_normalize(X, record_params)
+        elif self.normalization_type == NormalizationType.MEAN:
+            return self._mean_normalize(X, record_params)
+        return X
 
-    def gradients(self, X, t):
-        X_ext = self.extend_X(X)
-        return -X_ext.T @ (t - self.predict(X)) / X_ext.shape[0]
+    @staticmethod
+    def _predict(X, w): # model 在 X 上 w 处的预测
+        X_ext = LinearRegression.extend_X(X)
+        return X_ext @ w
+    
+    def predict(self, X, w = None): # model 在 X 上 w 处的预测 (输入的 X 未归一化; 不传入 w 时使用当前的 w)
+        w = self.w if w is None else w
+        X_norm = self._normalize(X)
+        return LinearRegression._predict(X_norm, w)
+    
+    @staticmethod
+    def _loss(X, t, w): # (X, t) 的 loss 曲面上 w 处的值
+        return np.mean((t - LinearRegression._predict(X, w)) ** 2)
+    
+    def loss(self, X, t, w = None): # (X, t) 的 loss 曲面上 w 处的值 (输入的 X 未归一化; 不传入 w 时使用当前的 w)
+        w = self.w if w is None else w
+        X_norm = self._normalize(X)
+        return LinearRegression._loss(X_norm, t, w)
+
+    @staticmethod
+    def _gradients(X, t, w): # (X, t) 的 loss 曲面上 w 处的梯度
+        X_ext = LinearRegression.extend_X(X)
+        return -X_ext.T @ (t - LinearRegression._predict(X, w)) / X_ext.shape[0]
     
     def optimize(self, X, t):
-        if self.normalization_type == NormalizationType.MINMAX:
-            X = self.min_max_normalization(X)
-        elif self.normalization_type == NormalizationType.MEAN:
-            X = self.mean_normalization(X)
+        # Normalization for the first time
+        X_norm = self._normalize(X, record_params = True)
 
+        # Initialize history
         if self.tolerance is not None:
             last_loss = np.inf
-
         self.w_history = []
         self.loss_history = []
 
         for i in range(self.max_iterations):
-            _X, _t = X, t
+            # Select samples
+            _X, _t = X_norm, t
             if self.optimizer_type == OptimizerType.SGD:
-                indices = np.random.randint(0, X.shape[0])
-                _X, _t = X[indices:(indices + 1)], t[indices:(indices + 1)]
+                indices = np.random.randint(0, _X.shape[0])
+                _X, _t = _X[indices:(indices + 1)], _t[indices:(indices + 1)]
             elif self.optimizer_type == OptimizerType.MBGD:
-                indices = np.random.choice(X.shape[0], self.batch_size, replace=False)
-                _X, _t = X[indices], t[indices]
+                indices = np.random.choice(_X.shape[0], self.batch_size, replace = False)
+                _X, _t = _X[indices], _t[indices]
 
-            grads = self.gradients(_X, _t)
+            # Calculate gradients on the selected samples
+            grads = self._gradients(_X, _t, self.w)
+
+            # Update weights
             self.w -= self.learning_rate * grads
-            new_loss = self.loss(X, t)
 
-            self.w_history.append(self.w.copy())
-            self.loss_history.append(new_loss)
-
+            # Calculate overall loss and check convergence
+            new_loss = self._loss(X_norm, t, self.w)
             if self.tolerance is not None:
                 if np.abs(new_loss - last_loss) < self.tolerance:
                     print(f"Converged at iteration {i}.")
                     break
                 last_loss = new_loss
+
+            # Record history
+            self.w_history.append(self.w.copy())
+            self.loss_history.append(new_loss)
 
 
 """
@@ -124,31 +147,56 @@ def random_split(X, y, test_size = 0.2, seed = None):
 """
     Test the code
 """
-def plot_surface_path(X, t, w_history):
-    def loss(w, X, t):
-        return np.mean((t - LinearRegression.extend_X(X) @ w) ** 2)
+def plot_results(model, X, t):
+    # Optimization results
+    print(model.w)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    # Closed-form solution
+    X_norm = model._normalize(X)
+    X_ext = LinearRegression.extend_X(X_norm)
+    optimal_w = np.linalg.inv(X_ext.T @ X_ext) @ X_ext.T @ t
+    print(optimal_w)
 
-    # Surface
-    w0_vals = np.linspace(-10, 30, 100)
-    w1_vals = np.linspace(0, 2, 100)
-    W0, W1 = np.meshgrid(w0_vals, w1_vals)
-    Z = np.zeros_like(W0)
-    for i in range(W0.shape[0]):
-        for j in range(W0.shape[1]):
-            w = np.array([W0[i, j], W1[i, j]])
-            Z[i, j] = loss(w, X, t)
-    ax.plot_surface(W0, W1, Z, cmap=cm.coolwarm, alpha=0.6)
+    # Plot
+    fig = plt.figure(figsize = (30, 9))
+    fig.suptitle(f'Linear Regression\n(learning_rate = {model.learning_rate}, max_iterations = {model.max_iterations}, tolerance = {model.tolerance}, normalization_type = {model.normalization_type}, optimizer_type = {model.optimizer_type}, batch_size = {model.batch_size})', fontsize = 16)
 
-    # Descent path
-    w_history = np.array(w_history)
-    ax.plot(w_history[:, 0], w_history[:, 1], [loss(w, X, t) for w in w_history], 'r-o', markersize=5)
+    # Surface, Descent path & Optimal point
+    ax1 = fig.add_subplot(131, projection = '3d')
+    w0_vals = np.linspace(-50, 50, 100)
+    w1_vals = np.linspace(-20, 120, 100)
+    w0, w1 = np.meshgrid(w0_vals, w1_vals)
+    Z = np.zeros_like(w0)
+    for i in range(w0.shape[0]):
+        for j in range(w0.shape[1]):
+            w = np.array([w0[i, j], w1[i, j]])
+            Z[i, j] = model.loss(X, t, w)
+    ax1.plot_surface(w0, w1, Z, cmap = cm.coolwarm, alpha = 0.6)
+    w_history = np.array(model.w_history)
+    ax1.plot(w_history[:, 0], w_history[:, 1], [model.loss(X, t, w) for w in w_history], 'r-o', markersize = 1)
+    ax1.scatter(optimal_w[0], optimal_w[1], model.loss(X, t, optimal_w), color = 'blue', s = 10)
+    ax1.set_xlabel('w_0')
+    ax1.set_ylabel('w_1')
+    ax1.set_zlabel('Loss (MSE)')
+    ax1.set_title('Loss Surface & Descent Path')
 
-    ax.set_xlabel('w_0')
-    ax.set_ylabel('w_1')
-    ax.set_zlabel('Loss')
+    # Optimized line
+    ax2 = fig.add_subplot(132)
+    X_ext = LinearRegression.extend_X(X_norm)
+    ax2.scatter(X, t, color = 'blue')
+    ax2.plot(X, X_ext @ model.w, color = 'red')
+    ax2.set_xlabel('X')
+    ax2.set_ylabel('t')
+    ax2.set_title('Optimized Line')
+
+    # Loss curve
+    ax3 = fig.add_subplot(133)
+    ax3.plot(model.loss_history)
+    ax3.set_xlabel('Iteration')
+    ax3.set_ylabel('Loss (MSE)')
+    ax3.set_title('Loss Curve')
+
+    # Show plot
     plt.show()
 
 if __name__ == "__main__":
@@ -165,31 +213,15 @@ if __name__ == "__main__":
     # Initialize the linear regression model
     model = LinearRegression(
         dim = 1,
-        learning_rate = 0.0001,
-        max_iterations = 100000,
-        tolerance = 1e-5,
-        normalization_type = NormalizationType.NONE,
-        optimizer_type = OptimizerType.MBGD,
-        batch_size = 10
+        learning_rate = 0.01,
+        max_iterations = 10000,
+        tolerance = 1e-6,
+        normalization_type = NormalizationType.MINMAX,
+        optimizer_type = OptimizerType.SGD,
+        # batch_size = 16
     )
     model.optimize(X_train, y_train)
 
-    # Optimization results
-    print(model.w)
-
-    # Closed-form solution
-    X_ext = LinearRegression.extend_X(X_train)
-    print(np.linalg.inv(X_ext.T @ X_ext) @ X_ext.T @ y_train)
-
-    # Optimized line
-    # plt.scatter(X_train, y_train, color = 'blue')
-    # plt.plot(X_train, model.predict(X_train), color = 'red')
-    # plt.show()
-
-    # Loss curve
-    # plt.plot(loss_history)
-    # plt.show()
-
-    # Surface plot
-    plot_surface_path(X_train, y_train, model.w_history)
+    # Plot the results
+    plot_results(model, X_train, y_train)
 
