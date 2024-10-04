@@ -163,16 +163,24 @@ def plot_results(model, X, t):
 
     # Surface, Descent path & Optimal point
     ax1 = fig.add_subplot(131, projection = '3d')
-    w0_vals = np.linspace(-50, 50, 100)
-    w1_vals = np.linspace(-20, 120, 100)
-    w0, w1 = np.meshgrid(w0_vals, w1_vals)
-    Z = np.zeros_like(w0)
-    for i in range(w0.shape[0]):
-        for j in range(w0.shape[1]):
-            w = np.array([w0[i, j], w1[i, j]])
-            Z[i, j] = model.loss(X, t, w)
-    ax1.plot_surface(w0, w1, Z, cmap = cm.coolwarm, alpha = 0.6)
+    margin_ratio = 0.12
     w_history = np.array(model.w_history)
+    w0_min, w0_max = np.min(w_history[:, 0]), np.max(w_history[:, 0])
+    w1_min, w1_max = np.min(w_history[:, 1]), np.max(w_history[:, 1])
+    w0_min, w0_max = min(w0_min, optimal_w[0]), max(w0_max, optimal_w[0])
+    w1_min, w1_max = min(w1_min, optimal_w[1]), max(w1_max, optimal_w[1])
+    w0_min, w0_max = w0_min - margin_ratio * (w0_max - w0_min), w0_max + margin_ratio * (w0_max - w0_min)
+    w1_min, w1_max = w1_min - margin_ratio * (w1_max - w1_min), w1_max + margin_ratio * (w1_max - w1_min)
+    w0_mesh, w1_mesh = np.meshgrid(
+        np.linspace(w0_min, w0_max, 100),
+        np.linspace(w1_min, w1_max, 100)
+    )
+    loss_mesh = np.zeros_like(w0_mesh)
+    for i in range(w0_mesh.shape[0]):
+        for j in range(w0_mesh.shape[1]):
+            w = np.array([w0_mesh[i, j], w1_mesh[i, j]])
+            loss_mesh[i, j] = model.loss(X, t, w)
+    ax1.plot_surface(w0_mesh, w1_mesh, loss_mesh, cmap = cm.coolwarm, alpha = 0.6)
     ax1.plot(w_history[:, 0], w_history[:, 1], [model.loss(X, t, w) for w in w_history], 'r-o', markersize = 1)
     ax1.scatter(optimal_w[0], optimal_w[1], model.loss(X, t, optimal_w), color = 'blue', s = 10)
     ax1.set_xlabel('w_0')
@@ -216,7 +224,7 @@ if __name__ == "__main__":
         learning_rate = 0.01,
         max_iterations = 10000,
         tolerance = 1e-6,
-        normalization_type = NormalizationType.MINMAX,
+        normalization_type = NormalizationType.MEAN,
         optimizer_type = OptimizerType.SGD,
         # batch_size = 16
     )
