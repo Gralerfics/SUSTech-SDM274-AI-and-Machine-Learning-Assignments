@@ -146,9 +146,7 @@ def random_split(X, y, test_size = 0.2, seed = None):
 """
     Test the code
 """
-def plot_results(model, X, t, equal_scale = False, fig_scale = 1):
-    assert model.w.size == 2
-
+def show_results(model, X, t, equal_scale = False, fig_scale = 1):
     # Optimization results
     print('Optimized result:\t', model.w)
 
@@ -162,6 +160,8 @@ def plot_results(model, X, t, equal_scale = False, fig_scale = 1):
     H = X_norm_ext.T @ X_norm_ext
     print('Hessian (XTX):\n', H)
     print('H\'s eigenvalues:\t', np.linalg.eigvals(H))
+
+    assert model.w.size == 2
 
     # Plot
     fig = plt.figure(figsize = (16 * fig_scale, 4.5 * fig_scale))
@@ -246,5 +246,5 @@ if __name__ == "__main__":
     model.optimize(X_train, y_train)
 
     # Plot the results
-    plot_results(model, X_train, y_train, equal_scale = True, fig_scale = 2)
+    show_results(model, X_train, y_train, equal_scale = True, fig_scale = 2)
 
