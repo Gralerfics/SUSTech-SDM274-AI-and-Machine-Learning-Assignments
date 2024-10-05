@@ -150,13 +150,18 @@ def plot_results(model, X, t, equal_scale = False, fig_scale = 1):
     assert model.w.size == 2
 
     # Optimization results
-    print(model.w)
+    print('Optimized result:\t', model.w)
 
     # Closed-form solution
     X_norm = model._normalize(X)
-    X_ext = LinearRegression.extend_X(X_norm)
-    optimal_w = np.linalg.inv(X_ext.T @ X_ext) @ X_ext.T @ t
-    print(optimal_w)
+    X_norm_ext = LinearRegression.extend_X(X_norm)
+    optimal_w = np.linalg.inv(X_norm_ext.T @ X_norm_ext) @ X_norm_ext.T @ t
+    print('Closed-form solution:\t', optimal_w)
+
+    # Hessian matrix and eigenvalues
+    H = X_norm_ext.T @ X_norm_ext
+    print('Hessian (XTX):\n', H)
+    print('H\'s eigenvalues:\t', np.linalg.eigvals(H))
 
     # Plot
     fig = plt.figure(figsize = (16 * fig_scale, 4.5 * fig_scale))
@@ -197,10 +202,10 @@ def plot_results(model, X, t, equal_scale = False, fig_scale = 1):
 
     # Optimized line
     ax2 = fig.add_subplot(132)
-    X_ext = LinearRegression.extend_X(X_norm)
+    X_norm_ext = LinearRegression.extend_X(X_norm)
     ax2.scatter(X, t, color = 'blue')
     ax2.axis('equal')
-    ax2.plot(X, X_ext @ model.w, color = 'red')
+    ax2.plot(X, X_norm_ext @ model.w, color = 'red')
     ax2.tick_params(labelsize = 6 * fig_scale)
     ax2.set_xlabel('X', fontsize = 8 * fig_scale)
     ax2.set_ylabel('t', fontsize = 8 * fig_scale)
@@ -241,5 +246,5 @@ if __name__ == "__main__":
     model.optimize(X_train, y_train)
 
     # Plot the results
-    plot_results(model, X_train, y_train, equal_scale = True)
+    plot_results(model, X_train, y_train, equal_scale = True, fig_scale = 2)
 
