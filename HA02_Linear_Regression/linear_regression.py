@@ -191,12 +191,12 @@ def show_results(model, X, t, equal_scale = False, fig_scale = 1):
                 w = np.array([w0_mesh[i, j], w1_mesh[i, j]])
                 loss_mesh[i, j] = model.loss(X, t, w)
         ax1.plot_surface(w0_mesh, w1_mesh, loss_mesh, cmap = cm.coolwarm, alpha = 0.6)
-        ax1.plot(w_history[:, 0], w_history[:, 1], [model.loss(X, t, w) for w in w_history], 'r-o', markersize = 0.5 * fig_scale)
+        ax1.plot(w_history[:, 0], w_history[:, 1], [model.loss(X, t, w) for w in w_history], 'r-o', markersize = 0.5 * fig_scale, linewidth = 0.5 * fig_scale)
         ax1.scatter(optimal_w[0], optimal_w[1], model.loss(X, t, optimal_w), color = 'blue', s = 5 * fig_scale)
         ax1.tick_params(labelsize = 6 * fig_scale)
-        ax1.set_xlabel('w_0', fontsize = 8 * fig_scale)
-        ax1.set_ylabel('w_1', fontsize = 8 * fig_scale)
-        ax1.set_zlabel('Loss (MSE)', fontsize = 8 * fig_scale)
+        ax1.set_xlabel('w_0', fontsize = 6 * fig_scale)
+        ax1.set_ylabel('w_1', fontsize = 6 * fig_scale)
+        ax1.set_zlabel('Loss (MSE)', fontsize = 6 * fig_scale)
         ax1.set_title('Loss Surface & Descent Path', fontsize = 8 * fig_scale)
 
         # Optimized line
@@ -206,16 +206,16 @@ def show_results(model, X, t, equal_scale = False, fig_scale = 1):
         ax2.axis('equal')
         ax2.plot(X, X_norm_ext @ model.w, color = 'red')
         ax2.tick_params(labelsize = 6 * fig_scale)
-        ax2.set_xlabel('X', fontsize = 8 * fig_scale)
-        ax2.set_ylabel('t', fontsize = 8 * fig_scale)
+        ax2.set_xlabel('X', fontsize = 6 * fig_scale)
+        ax2.set_ylabel('t', fontsize = 6 * fig_scale)
         ax2.set_title('Optimized Line', fontsize = 8 * fig_scale)
 
         # Loss curve
         ax3 = fig.add_subplot(133)
         ax3.plot(model.loss_history)
         ax3.tick_params(labelsize = 6 * fig_scale)
-        ax3.set_xlabel('Iteration', fontsize = 8 * fig_scale)
-        ax3.set_ylabel('Loss (MSE)', fontsize = 8 * fig_scale)
+        ax3.set_xlabel('Iteration', fontsize = 6 * fig_scale)
+        ax3.set_ylabel('Loss (MSE)', fontsize = 6 * fig_scale)
         ax3.set_title('Loss Curve', fontsize = 8 * fig_scale)
 
         # Show plot
@@ -223,30 +223,33 @@ def show_results(model, X, t, equal_scale = False, fig_scale = 1):
 
 if __name__ == "__main__":
     # Generate data (modified from HA-02.pdf)
-    N = 100
-    X_train = np.arange(N).reshape(N, 1)
-    a, b = 1, 10
-    y_train = a * X_train + b + np.random.normal(0, 5, size = X_train.shape)
-    y_train = y_train.reshape(-1)
-    X_train, y_train, X_test, y_test = random_split(X_train, y_train, test_size = 0.2, seed = 42)
+
     # N = 100
-    # X_train = np.arange(N * 2)
-    # np.random.shuffle(X_train)
-    # X_train = X_train.reshape(N, 2)
-    # a, b, c = 1, 2, 10
-    # y_train = a * X_train[:, 0] + b * X_train[:, 1] + c + np.random.normal(0, 5, size = X_train.shape[0])
+    # X_train = np.arange(N).reshape(N, 1)
+    # a, b = 1, 10
+    # y_train = a * X_train + b + np.random.normal(0, 5, size = X_train.shape)
     # y_train = y_train.reshape(-1)
+    # X_train, y_train, X_test, y_test = random_split(X_train, y_train, test_size = 0.2, seed = 42)
+
+    N = 10000
+    # X_train = np.arange(N * 2)
+    X_train = np.random.normal(0, 1, size = N * 2)
+    np.random.shuffle(X_train)
+    X_train = X_train.reshape(N, 2)
+    a, b, c = 1, 2, 10
+    y_train = a * X_train[:, 0] + b * X_train[:, 1] + c + np.random.normal(0, 5, size = X_train.shape[0])
+    y_train = y_train.reshape(-1)
 
     # Split the data
     X_train, y_train, X_test, y_test = random_split(X_train, y_train, test_size = 0.2, seed = 42)
 
     # Initialize the linear regression model
     model = LinearRegression(
-        dim = 1,
+        dim = 2,
         learning_rate = 0.01,
         max_iterations = 10000,
         tolerance = 1e-6,
-        normalization_type = NormalizationType.MEAN,
+        normalization_type = NormalizationType.NONE,
         optimizer_type = OptimizerType.SGD,
         # batch_size = 16
     )
