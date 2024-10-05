@@ -146,7 +146,9 @@ def random_split(X, y, test_size = 0.2, seed = None):
 """
     Test the code
 """
-def plot_results(model, X, t):
+def plot_results(model, X, t, equal_scale = False, fig_scale = 1):
+    assert model.w.size == 2
+
     # Optimization results
     print(model.w)
 
@@ -157,22 +159,27 @@ def plot_results(model, X, t):
     print(optimal_w)
 
     # Plot
-    fig = plt.figure(figsize = (30, 9))
-    fig.suptitle(f'Linear Regression\n(learning_rate = {model.learning_rate}, max_iterations = {model.max_iterations}, tolerance = {model.tolerance}, normalization_type = {model.normalization_type}, optimizer_type = {model.optimizer_type}{", batch_size = " + str(model.batch_size) if model.optimizer_type == OptimizerType.MBGD else ""})', fontsize = 16)
+    fig = plt.figure(figsize = (16 * fig_scale, 4.5 * fig_scale))
+    fig.suptitle(f'(learning_rate = {model.learning_rate}, max_iterations = {model.max_iterations}, tolerance = {model.tolerance}, normalization_type = {model.normalization_type}, optimizer_type = {model.optimizer_type}{", batch_size = " + str(model.batch_size) if model.optimizer_type == OptimizerType.MBGD else ""})', fontsize = 8 * fig_scale)
 
     # Surface, Descent path & Optimal point
     ax1 = fig.add_subplot(131, projection = '3d')
     margin_ratio = 0.12
+    grid_num = 100
     w_history = np.array(model.w_history)
-    w0_min, w0_max = np.min(w_history[:, 0]), np.max(w_history[:, 0])
-    w1_min, w1_max = np.min(w_history[:, 1]), np.max(w_history[:, 1])
-    w0_min, w0_max = min(w0_min, optimal_w[0]), max(w0_max, optimal_w[0])
-    w1_min, w1_max = min(w1_min, optimal_w[1]), max(w1_max, optimal_w[1])
-    w0_min, w0_max = w0_min - margin_ratio * (w0_max - w0_min), w0_max + margin_ratio * (w0_max - w0_min)
-    w1_min, w1_max = w1_min - margin_ratio * (w1_max - w1_min), w1_max + margin_ratio * (w1_max - w1_min)
+    w0_l, w0_r = min(np.min(w_history[:, 0]), optimal_w[0]), max(np.max(w_history[:, 0]), optimal_w[0])
+    w1_l, w1_r = min(np.min(w_history[:, 1]), optimal_w[1]), max(np.max(w_history[:, 1]), optimal_w[1])
+    w_center = (w0_l + w0_r) / 2, (w1_l + w1_r) / 2
+    r = max(w0_r - w0_l, w1_r - w1_l) / 2
+    if equal_scale:
+        w0_l, w0_r = w_center[0] - r, w_center[0] + r
+        w1_l, w1_r = w_center[1] - r, w_center[1] + r
+    margin_r = margin_ratio * r * 2
+    w0_l, w0_r = w0_l - margin_r, w0_r + margin_r
+    w1_l, w1_r = w1_l - margin_r, w1_r + margin_r
     w0_mesh, w1_mesh = np.meshgrid(
-        np.linspace(w0_min, w0_max, 100),
-        np.linspace(w1_min, w1_max, 100)
+        np.linspace(w0_l, w0_r, grid_num),
+        np.linspace(w1_l, w1_r, grid_num)
     )
     loss_mesh = np.zeros_like(w0_mesh)
     for i in range(w0_mesh.shape[0]):
@@ -180,28 +187,32 @@ def plot_results(model, X, t):
             w = np.array([w0_mesh[i, j], w1_mesh[i, j]])
             loss_mesh[i, j] = model.loss(X, t, w)
     ax1.plot_surface(w0_mesh, w1_mesh, loss_mesh, cmap = cm.coolwarm, alpha = 0.6)
-    ax1.plot(w_history[:, 0], w_history[:, 1], [model.loss(X, t, w) for w in w_history], 'r-o', markersize = 1)
-    ax1.scatter(optimal_w[0], optimal_w[1], model.loss(X, t, optimal_w), color = 'blue', s = 10)
-    ax1.set_xlabel('w_0')
-    ax1.set_ylabel('w_1')
-    ax1.set_zlabel('Loss (MSE)')
-    ax1.set_title('Loss Surface & Descent Path')
+    ax1.plot(w_history[:, 0], w_history[:, 1], [model.loss(X, t, w) for w in w_history], 'r-o', markersize = 0.5 * fig_scale)
+    ax1.scatter(optimal_w[0], optimal_w[1], model.loss(X, t, optimal_w), color = 'blue', s = 5 * fig_scale)
+    ax1.tick_params(labelsize = 6 * fig_scale)
+    ax1.set_xlabel('w_0', fontsize = 8 * fig_scale)
+    ax1.set_ylabel('w_1', fontsize = 8 * fig_scale)
+    ax1.set_zlabel('Loss (MSE)', fontsize = 8 * fig_scale)
+    ax1.set_title('Loss Surface & Descent Path', fontsize = 8 * fig_scale)
 
     # Optimized line
     ax2 = fig.add_subplot(132)
     X_ext = LinearRegression.extend_X(X_norm)
     ax2.scatter(X, t, color = 'blue')
+    ax2.axis('equal')
     ax2.plot(X, X_ext @ model.w, color = 'red')
-    ax2.set_xlabel('X')
-    ax2.set_ylabel('t')
-    ax2.set_title('Optimized Line')
+    ax2.tick_params(labelsize = 6 * fig_scale)
+    ax2.set_xlabel('X', fontsize = 8 * fig_scale)
+    ax2.set_ylabel('t', fontsize = 8 * fig_scale)
+    ax2.set_title('Optimized Line', fontsize = 8 * fig_scale)
 
     # Loss curve
     ax3 = fig.add_subplot(133)
     ax3.plot(model.loss_history)
-    ax3.set_xlabel('Iteration')
-    ax3.set_ylabel('Loss (MSE)')
-    ax3.set_title('Loss Curve')
+    ax3.tick_params(labelsize = 6 * fig_scale)
+    ax3.set_xlabel('Iteration', fontsize = 8 * fig_scale)
+    ax3.set_ylabel('Loss (MSE)', fontsize = 8 * fig_scale)
+    ax3.set_title('Loss Curve', fontsize = 8 * fig_scale)
 
     # Show plot
     plt.show()
@@ -223,12 +234,12 @@ if __name__ == "__main__":
         learning_rate = 0.01,
         max_iterations = 10000,
         tolerance = 1e-6,
-        normalization_type = NormalizationType.MEAN,
+        normalization_type = NormalizationType.MINMAX,
         optimizer_type = OptimizerType.SGD,
-        batch_size = 16
+        # batch_size = 16
     )
     model.optimize(X_train, y_train)
 
     # Plot the results
-    plot_results(model, X_train, y_train)
+    plot_results(model, X_train, y_train, equal_scale = True)
 
