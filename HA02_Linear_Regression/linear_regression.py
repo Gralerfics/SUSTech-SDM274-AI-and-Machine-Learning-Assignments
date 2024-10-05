@@ -161,66 +161,65 @@ def show_results(model, X, t, equal_scale = False, fig_scale = 1):
     print('Hessian (XTX):\n', H)
     print('H\'s eigenvalues:\t', np.linalg.eigvals(H))
 
-    assert model.w.size == 2
-
     # Plot
-    fig = plt.figure(figsize = (16 * fig_scale, 4.5 * fig_scale))
-    fig.suptitle(f'(learning_rate = {model.learning_rate}, max_iterations = {model.max_iterations}, tolerance = {model.tolerance}, normalization_type = {model.normalization_type}, optimizer_type = {model.optimizer_type}{", batch_size = " + str(model.batch_size) if model.optimizer_type == OptimizerType.MBGD else ""})', fontsize = 8 * fig_scale)
+    if model.w.size == 2:
+        fig = plt.figure(figsize = (16 * fig_scale, 4.5 * fig_scale))
+        fig.suptitle(f'(learning_rate = {model.learning_rate}, max_iterations = {model.max_iterations}, tolerance = {model.tolerance}, normalization_type = {model.normalization_type}, optimizer_type = {model.optimizer_type}{", batch_size = " + str(model.batch_size) if model.optimizer_type == OptimizerType.MBGD else ""})', fontsize = 8 * fig_scale)
 
-    # Surface, Descent path & Optimal point
-    ax1 = fig.add_subplot(131, projection = '3d')
-    margin_ratio = 0.12
-    grid_num = 100
-    w_history = np.array(model.w_history)
-    w0_l, w0_r = min(np.min(w_history[:, 0]), optimal_w[0]), max(np.max(w_history[:, 0]), optimal_w[0])
-    w1_l, w1_r = min(np.min(w_history[:, 1]), optimal_w[1]), max(np.max(w_history[:, 1]), optimal_w[1])
-    w_center = (w0_l + w0_r) / 2, (w1_l + w1_r) / 2
-    r = max(w0_r - w0_l, w1_r - w1_l) / 2
-    if equal_scale:
-        w0_l, w0_r = w_center[0] - r, w_center[0] + r
-        w1_l, w1_r = w_center[1] - r, w_center[1] + r
-    margin_r = margin_ratio * r * 2
-    w0_l, w0_r = w0_l - margin_r, w0_r + margin_r
-    w1_l, w1_r = w1_l - margin_r, w1_r + margin_r
-    w0_mesh, w1_mesh = np.meshgrid(
-        np.linspace(w0_l, w0_r, grid_num),
-        np.linspace(w1_l, w1_r, grid_num)
-    )
-    loss_mesh = np.zeros_like(w0_mesh)
-    for i in range(w0_mesh.shape[0]):
-        for j in range(w0_mesh.shape[1]):
-            w = np.array([w0_mesh[i, j], w1_mesh[i, j]])
-            loss_mesh[i, j] = model.loss(X, t, w)
-    ax1.plot_surface(w0_mesh, w1_mesh, loss_mesh, cmap = cm.coolwarm, alpha = 0.6)
-    ax1.plot(w_history[:, 0], w_history[:, 1], [model.loss(X, t, w) for w in w_history], 'r-o', markersize = 0.5 * fig_scale)
-    ax1.scatter(optimal_w[0], optimal_w[1], model.loss(X, t, optimal_w), color = 'blue', s = 5 * fig_scale)
-    ax1.tick_params(labelsize = 6 * fig_scale)
-    ax1.set_xlabel('w_0', fontsize = 8 * fig_scale)
-    ax1.set_ylabel('w_1', fontsize = 8 * fig_scale)
-    ax1.set_zlabel('Loss (MSE)', fontsize = 8 * fig_scale)
-    ax1.set_title('Loss Surface & Descent Path', fontsize = 8 * fig_scale)
+        # Surface, Descent path & Optimal point
+        ax1 = fig.add_subplot(131, projection = '3d')
+        margin_ratio = 0.12
+        grid_num = 100
+        w_history = np.array(model.w_history)
+        w0_l, w0_r = min(np.min(w_history[:, 0]), optimal_w[0]), max(np.max(w_history[:, 0]), optimal_w[0])
+        w1_l, w1_r = min(np.min(w_history[:, 1]), optimal_w[1]), max(np.max(w_history[:, 1]), optimal_w[1])
+        w_center = (w0_l + w0_r) / 2, (w1_l + w1_r) / 2
+        r = max(w0_r - w0_l, w1_r - w1_l) / 2
+        if equal_scale:
+            w0_l, w0_r = w_center[0] - r, w_center[0] + r
+            w1_l, w1_r = w_center[1] - r, w_center[1] + r
+        margin_r = margin_ratio * r * 2
+        w0_l, w0_r = w0_l - margin_r, w0_r + margin_r
+        w1_l, w1_r = w1_l - margin_r, w1_r + margin_r
+        w0_mesh, w1_mesh = np.meshgrid(
+            np.linspace(w0_l, w0_r, grid_num),
+            np.linspace(w1_l, w1_r, grid_num)
+        )
+        loss_mesh = np.zeros_like(w0_mesh)
+        for i in range(w0_mesh.shape[0]):
+            for j in range(w0_mesh.shape[1]):
+                w = np.array([w0_mesh[i, j], w1_mesh[i, j]])
+                loss_mesh[i, j] = model.loss(X, t, w)
+        ax1.plot_surface(w0_mesh, w1_mesh, loss_mesh, cmap = cm.coolwarm, alpha = 0.6)
+        ax1.plot(w_history[:, 0], w_history[:, 1], [model.loss(X, t, w) for w in w_history], 'r-o', markersize = 0.5 * fig_scale)
+        ax1.scatter(optimal_w[0], optimal_w[1], model.loss(X, t, optimal_w), color = 'blue', s = 5 * fig_scale)
+        ax1.tick_params(labelsize = 6 * fig_scale)
+        ax1.set_xlabel('w_0', fontsize = 8 * fig_scale)
+        ax1.set_ylabel('w_1', fontsize = 8 * fig_scale)
+        ax1.set_zlabel('Loss (MSE)', fontsize = 8 * fig_scale)
+        ax1.set_title('Loss Surface & Descent Path', fontsize = 8 * fig_scale)
 
-    # Optimized line
-    ax2 = fig.add_subplot(132)
-    X_norm_ext = LinearRegression.extend_X(X_norm)
-    ax2.scatter(X, t, color = 'blue')
-    ax2.axis('equal')
-    ax2.plot(X, X_norm_ext @ model.w, color = 'red')
-    ax2.tick_params(labelsize = 6 * fig_scale)
-    ax2.set_xlabel('X', fontsize = 8 * fig_scale)
-    ax2.set_ylabel('t', fontsize = 8 * fig_scale)
-    ax2.set_title('Optimized Line', fontsize = 8 * fig_scale)
+        # Optimized line
+        ax2 = fig.add_subplot(132)
+        X_norm_ext = LinearRegression.extend_X(X_norm)
+        ax2.scatter(X, t, color = 'blue')
+        ax2.axis('equal')
+        ax2.plot(X, X_norm_ext @ model.w, color = 'red')
+        ax2.tick_params(labelsize = 6 * fig_scale)
+        ax2.set_xlabel('X', fontsize = 8 * fig_scale)
+        ax2.set_ylabel('t', fontsize = 8 * fig_scale)
+        ax2.set_title('Optimized Line', fontsize = 8 * fig_scale)
 
-    # Loss curve
-    ax3 = fig.add_subplot(133)
-    ax3.plot(model.loss_history)
-    ax3.tick_params(labelsize = 6 * fig_scale)
-    ax3.set_xlabel('Iteration', fontsize = 8 * fig_scale)
-    ax3.set_ylabel('Loss (MSE)', fontsize = 8 * fig_scale)
-    ax3.set_title('Loss Curve', fontsize = 8 * fig_scale)
+        # Loss curve
+        ax3 = fig.add_subplot(133)
+        ax3.plot(model.loss_history)
+        ax3.tick_params(labelsize = 6 * fig_scale)
+        ax3.set_xlabel('Iteration', fontsize = 8 * fig_scale)
+        ax3.set_ylabel('Loss (MSE)', fontsize = 8 * fig_scale)
+        ax3.set_title('Loss Curve', fontsize = 8 * fig_scale)
 
-    # Show plot
-    plt.show()
+        # Show plot
+        plt.show()
 
 if __name__ == "__main__":
     # Generate data (modified from HA-02.pdf)
@@ -229,6 +228,14 @@ if __name__ == "__main__":
     a, b = 1, 10
     y_train = a * X_train + b + np.random.normal(0, 5, size = X_train.shape)
     y_train = y_train.reshape(-1)
+    X_train, y_train, X_test, y_test = random_split(X_train, y_train, test_size = 0.2, seed = 42)
+    # N = 100
+    # X_train = np.arange(N * 2)
+    # np.random.shuffle(X_train)
+    # X_train = X_train.reshape(N, 2)
+    # a, b, c = 1, 2, 10
+    # y_train = a * X_train[:, 0] + b * X_train[:, 1] + c + np.random.normal(0, 5, size = X_train.shape[0])
+    # y_train = y_train.reshape(-1)
 
     # Split the data
     X_train, y_train, X_test, y_test = random_split(X_train, y_train, test_size = 0.2, seed = 42)
@@ -239,7 +246,7 @@ if __name__ == "__main__":
         learning_rate = 0.01,
         max_iterations = 10000,
         tolerance = 1e-6,
-        normalization_type = NormalizationType.MINMAX,
+        normalization_type = NormalizationType.MEAN,
         optimizer_type = OptimizerType.SGD,
         # batch_size = 16
     )
