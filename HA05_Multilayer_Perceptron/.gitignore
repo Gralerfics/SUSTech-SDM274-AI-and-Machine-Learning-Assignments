@@ -1,0 +1,6 @@
+simple_ml/__pycache__/
+simple_ml/data/__pycache__/
+simple_ml/evaluation/__pycache__/
+simple_ml/model/__pycache__/
+simple_ml/training/__pycache__/
+simple_ml/visualization/__pycache__/
