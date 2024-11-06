@@ -103,3 +103,28 @@ class Sigmoid(Model):
         """
         self.input.gradient = self.output.gradient * self.output.value * (1 - self.output.value)
 
+
+class Tanh(Model): # TODO: to be checked
+    def __init__(self, x_left_bound = -100, x_right_bound = 100, epsilon = 1e-8):
+        super(Tanh, self).__init__()
+        self.x_left_bound = x_left_bound
+        self.x_right_bound = x_right_bound
+        self.epsilon = epsilon
+    
+    def forward(self, X):
+        super(Tanh, self).forward(X)
+        """
+            Y = (exp(X) - exp(-X)) / (exp(X) + exp(-X))
+        """
+        exp_plus = np.exp(np.clip(X.value, self.x_left_bound, self.x_right_bound))
+        exp_minus = np.exp(np.clip(-X.value, self.x_left_bound, self.x_right_bound))
+        self.output = Variable((exp_plus - exp_minus) / (exp_plus + exp_minus + self.epsilon), derivable = True)
+        # self.output = Variable((exp_plus - exp_minus) / np.maximum(exp_plus + exp_minus, self.epsilon), derivable = True)
+        return self.output
+    
+    def backward(self):
+        """
+            dE/dX = dE/dY * dY/dX = dE/dY * (1 - Y ** 2)
+        """
+        self.input.gradient = self.output.gradient * (1 - self.output.value ** 2)
+

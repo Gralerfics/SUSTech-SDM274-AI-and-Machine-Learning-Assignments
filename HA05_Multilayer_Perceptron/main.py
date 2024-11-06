@@ -6,7 +6,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
 from simple_ml.data.samples import generate_2d_classification_circle, generate_2d_classification_exclusive_or
 from simple_ml.model import Model, Sequential
-from simple_ml.model.layers import Linear, ReLU, Sigmoid
+from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
 from simple_ml.training.optimizer import GD, Adam
 
@@ -21,13 +21,29 @@ dataset = Dataset(data = data_np, preprocess_func = label_split)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
 train_iter = DataIterator(train_dataset, batch_size = 20, shuffle = True, cyclic = False)
 
+# model = Sequential([
+#     Linear(2, 8),
+#     Tanh(),
+#     Linear(8, 8),
+#     Tanh(),
+#     Linear(8, 1)
+# ])
+
 model = Sequential([
-    Linear(2, 8),
-    Sigmoid(),
-    Linear(8, 8),
-    Sigmoid(),
-    Linear(8, 1)
+    Linear(2, 4),
+    Tanh(),
+    Linear(4, 2),
+    Tanh(),
+    Linear(2, 1)
 ])
+
+# model = Sequential([
+#     Linear(2, 4),
+#     ReLU(),
+#     Linear(4, 2),
+#     ReLU(),
+#     Linear(2, 1)
+# ])
 
 criterion = MSELoss()
 # optimizer = GD(model.params, lr = 0.01)
