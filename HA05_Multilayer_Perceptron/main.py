@@ -4,14 +4,15 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
-from simple_ml.data.samples import generate_2d_classification_circle
+from simple_ml.data.samples import generate_2d_classification_circle, generate_2d_classification_exclusive_or
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
 from simple_ml.training.optimizer import GD, Adam
 
 
-data_np = generate_2d_classification_circle()
+# data_np = generate_2d_classification_circle()
+data_np = generate_2d_classification_exclusive_or()
 
 def label_split(data: np.ndarray):
     return data[:, :-1], data[:, -1].reshape(-1, 1) # [x_0, x_1], t
@@ -36,7 +37,7 @@ epoch_num = 1000
 train_loss_history = []
 
 # PLOT
-x1, x2 = np.meshgrid(np.linspace(-6, 6, 200), np.linspace(-6, 6, 200))
+x1, x2 = np.meshgrid(np.linspace(-6, 6, 100), np.linspace(-6, 6, 100))
 mesh_features = np.c_[x1.ravel(), x2.ravel()]
 
 cdict = {
@@ -47,7 +48,7 @@ cdict = {
 cmap = LinearSegmentedColormap("my_cmap", cdict)
 
 fig, (ax_data, ax_loss) = plt.subplots(1, 2, figsize = (15, 5))
-fig.subplots_adjust(wspace = 0.4)
+fig.subplots_adjust(wspace = 0.3)
 ax_data.set_aspect(1)
 
 scatter = ax_data.scatter([], [], c = [], s = 30, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
