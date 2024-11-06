@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 from ..data.types import Variable
@@ -14,7 +16,7 @@ class Model:
         pass # parameters -> self.params
     
     """ @Override (super().forward(X) should be called) """
-    def forward(self, X: Variable | np.ndarray) -> Variable:
+    def forward(self, X: Union[Variable, np.ndarray]) -> Variable:
         """ Forward propagation and model structure recording """
         # TODO: is it necessary to set self.input only when the model is called for the first time? Hint: currently the input of the input layer should be updated every time.
         if isinstance(X, Variable):

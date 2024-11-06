@@ -34,30 +34,29 @@ from simple_ml.training.optimizer import GD #, Adam
 #     [0, 0, 1]
 # ])
 
-model = Sequential([
-    Linear(3, 4), # , debug_init_weights = True),
-    Sigmoid(),
-    Linear(4, 3), # , debug_init_weights = True),
-    ReLU()
-])
+# model = Sequential([
+#     Linear(3, 4), # , debug_init_weights = True),
+#     Sigmoid(),
+#     Linear(4, 3), # , debug_init_weights = True),
+#     ReLU()
+# ])
 
-criterion = MSELoss()
-optimizer = GD(model.params, lr = 0.01)
-
-
-dataset = Dataset(file_path = "wine.data")
-data_iter = DataIterator(dataset, batch_size = 10, shuffle = True, cyclic = True)
+# criterion = MSELoss()
+# optimizer = GD(model.params, lr = 0.01)
 
 
-for epoch in range(100):
-    for X_np in data_iter:
-        out = model(X_np)
-        loss = criterion(out, )
+# dataset = Dataset(file_path = "wine.data")
+# data_iter = DataIterator(dataset, batch_size = 10, shuffle = True, cyclic = True)
 
-        # optimizer.zeroize_gradients()
-        model.backward()
-        optimizer.step()
 
+# for epoch in range(100):
+#     for X_np in data_iter:
+#         out = model(X_np)
+#         loss = criterion(out, )
+
+#         # optimizer.zeroize_gradients()
+#         model.backward()
+#         optimizer.step()
 
 
 # print("Loss value:\n", loss, "\n")
@@ -90,11 +89,14 @@ for epoch in range(100):
 # print("X.gradient:\n", model.input.gradient, "\n")
 
 
-# dataset = Dataset(file_path = "wine.data")
-# data_iter = DataIterator(dataset, batch_size = 10, shuffle = True, cyclic = True)
+def label_split(data: np.ndarray):
+    return data[:, 1:], data[:, 0].astype(int) # X, T
 
-# for i, batch in enumerate(data_iter):
-#     print(i, batch)
-#     if i >= 17:
-#         break
+dataset = Dataset(file_path = "wine.data", preprocess_func = label_split)
+data_iter = DataIterator(dataset, batch_size = 10, shuffle = False, cyclic = True)
+
+for i, [x, t] in enumerate(data_iter):
+    print(i, x[:, :2], t)
+    if i >= 17:
+        break
 

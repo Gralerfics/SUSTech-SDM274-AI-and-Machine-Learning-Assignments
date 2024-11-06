@@ -1,5 +1,6 @@
 import os
 import random
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -8,50 +9,12 @@ from ..data.types import Variable
 
 
 class Dataset:
-    """
     def __init__(self, **kwargs):
-        self.data: np.ndarray = kwargs.get('data', None)
+        self.data_raw: np.ndarray = kwargs.get('data', None) # the whole table
         self.file_path: str = kwargs.get('file_path', None)
-        assert (self.data is not None and self.file_path is None) or (self.data is None and self.file_path is not None) # only one of them should be provided
+        assert (self.data_raw is not None and self.file_path is None) or (self.data_raw is None and self.file_path is not None) # only one of them should be provided
 
-        self.in_memory: bool = kwargs.get('in_memory', True)
-        
-        if self.file_path is not None:
-            # from disk
-            self.file_type = kwargs.get('file_type', 'csv')
-            self.file_is_temp = False
-            if self.file_type == 'csv':
-                # csv
-                header = kwargs.get('header', None)
-                self.data = pd.read_csv(self.file_path, header = header).to_numpy() if self.in_memory else None # no header in default; read if in_memory, or read in __getitem__
-            else:
-                pass # TODO: other file types
-        else:
-            # from given data
-            if not self.in_memory:
-                self.file_path = os.urandom(16).hex() + '.csv'
-                while os.path.exists(self.file_path):
-                    self.file_path = os.urandom(16).hex() + '.csv'
-                self.file_type = 'csv'
-                self.file_is_temp = True
-                pd.DataFrame(self.data).to_csv(self.file_path, index = False) # temporary file
-
-                del self.data
-                self.data = None
-        
-        if self.in_memory:
-            self.length = self.data.shape[0]
-        else:
-            if self.file_type == 'csv':
-                self.length = sum(1 for _ in open(self.file_path)) - (1 if header is not None else 0)
-            else:
-                pass # TODO: other file types
-    """
-
-    def __init__(self, **kwargs):
-        self.data: np.ndarray = kwargs.get('data', None)
-        self.file_path: str = kwargs.get('file_path', None)
-        assert (self.data is not None and self.file_path is None) or (self.data is None and self.file_path is not None) # only one of them should be provided
+        self.preprocess_func = kwargs.get('preprocess_func', self.default_preprocess_func)
 
         if self.file_path is not None:
             # from disk
@@ -59,15 +22,27 @@ class Dataset:
             if file_type == 'csv':
                 # csv
                 header = kwargs.get('header', None) # no header in default
-                self.data = pd.read_csv(self.file_path, header = header).to_numpy() # TODO: header
+                self.data_raw = pd.read_csv(self.file_path, header = header).to_numpy() # TODO: header
             else:
                 pass # TODO: other file types
+        
+        self.length = self.data_raw.shape[0]
+
+        self.datas: Union[np.ndarray, list[np.ndarray]] = self.preprocess_func(self.data_raw)
+            # np.ndarray for the case of only one data source, list[np.ndarray] for the case of multiple data sources
+    
+    """ @Override """
+    def default_preprocess_func(self, data: np.ndarray):
+        return data # only one element, no list wrapping
 
     def __len__(self):
-        return self.data.shape[0]
+        return self.length
 
     def __getitem__(self, index):
-        return self.data[index]
+        if isinstance(self.datas, np.ndarray):
+            return self.datas[index]
+        elif isinstance(self.datas, list) or isinstance(self.datas, tuple):
+            return [d[index] for d in self.datas]
 
 
 class DataIterator:
