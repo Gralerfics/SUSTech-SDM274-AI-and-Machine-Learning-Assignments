@@ -20,7 +20,7 @@ class GD(Optimizer):
         super(GD, self).__init__(params)
         self.lr = lr
     
-    # def zeroize_gradients(self): # TODO: is needed? my gradient calculation are currently not accumulative.
+    # def zeroize_gradients(self): # TODO: is needed? gradient calculation is currently not accumulative.
     #     for param in self.params:
     #         param.gradient = np.zeros_like(param.value)
 

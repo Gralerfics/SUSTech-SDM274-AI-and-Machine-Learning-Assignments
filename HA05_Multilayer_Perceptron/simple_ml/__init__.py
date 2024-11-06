@@ -1,4 +1,4 @@
-from .data.dataset import Dataset, DataIterator
+from .data.dataset import Dataset, DataIterator, split_train_and_test_dataset
 from .data.types import Variable
 
 

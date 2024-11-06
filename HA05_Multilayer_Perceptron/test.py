@@ -1,6 +1,8 @@
 import numpy as np
 
-from simple_ml import Variable, Dataset, DataIterator
+import matplotlib.pyplot as plt
+
+from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
@@ -35,36 +37,50 @@ from simple_ml.training.optimizer import GD #, Adam
 # ])
 
 # model = Sequential([
-#     Linear(3, 4), # , debug_init_weights = True),
+#     Linear(3, 4),
 #     Sigmoid(),
-#     Linear(4, 3), # , debug_init_weights = True),
+#     Linear(4, 3),
 #     ReLU()
 # ])
 
-# criterion = MSELoss()
-# optimizer = GD(model.params, lr = 0.001)
+model = Sequential([
+    Linear(13, 2),
+    Sigmoid(),
+    Linear(2, 3),
+    Sigmoid()
+])
+
+criterion = CrossEntropyLoss()
+optimizer = GD(model.params, lr = 0.0001)
 
 
-# def label_split(data: np.ndarray):
-#     return data[:, 1:], data[:, 0].astype(int) # X, T
+def label_split(data: np.ndarray):
+    return data[:, 1:], np.eye(3)[data[:, 0].astype(int) - 1] # X, T
 
-# dataset = Dataset(file_path = "wine.data", preprocess_func = label_split)
-# dataset_it = DataIterator(dataset, batch_size = 10, shuffle = True, cyclic = False)
+dataset = Dataset(file_path = "wine.data", preprocess_func = label_split)
+train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2, seed = 42)
 
+train_iter = DataIterator(train_dataset, batch_size = 10, shuffle = True, cyclic = False)
 
-# train_loss_history = []
-# for epoch in range(100):
-#     train_loss = 0
-#     for batch, [features, labels] in enumerate(dataset_it):
-#         prediction = model(features)
-#         loss = criterion(prediction, labels)
+epoch_num = 100
+train_loss_history = []
 
-#         # optimizer.zeroize_gradients()
-#         model.backward()
-#         optimizer.step()
+for epoch in range(epoch_num):
+    train_loss = 0
 
-#         train_loss += loss
-#     train_loss_history.append(train_loss / len(dataset))
+    for batch, [features, labels] in enumerate(train_iter):
+        prediction = model(Variable(features, derivable = True))
+        loss = criterion(prediction, labels)
+
+        model.backward()
+        optimizer.step()
+
+        train_loss += loss
+    
+    train_loss_history.append(train_loss / len(dataset))
+
+plt.plot(np.arange(len(train_loss_history)), train_loss_history)
+plt.show()
 
 
 # print("Loss value:\n", loss, "\n")
@@ -97,14 +113,14 @@ from simple_ml.training.optimizer import GD #, Adam
 # print("X.gradient:\n", model.input.gradient, "\n")
 
 
-def label_split(data: np.ndarray):
-    return data[:, 1:], data[:, 0].astype(int) # X, T
+# def label_split(data: np.ndarray):
+#     return data[:, 1:], data[:, 0].astype(int) # X, T
 
-dataset = Dataset(file_path = "wine.data", preprocess_func = label_split)
-data_iter = DataIterator(dataset, batch_size = 10, shuffle = False, cyclic = False)
+# dataset = Dataset(file_path = "wine.data", preprocess_func = label_split)
+# data_iter = DataIterator(dataset, batch_size = 10, shuffle = False, cyclic = False)
 
-for i, [x, t] in enumerate(data_iter):
-    print(i, x[:, :2], t)
-    if i >= 17:
-        break
+# for i, [x, t] in enumerate(data_iter):
+#     print(i, x[:, :2], t)
+#     if i >= 17:
+#         break
 

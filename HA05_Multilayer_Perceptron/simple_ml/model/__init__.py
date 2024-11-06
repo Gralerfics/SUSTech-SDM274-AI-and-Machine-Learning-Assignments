@@ -16,15 +16,10 @@ class Model:
         pass # parameters -> self.params
     
     """ @Override (super().forward(X) should be called) """
-    def forward(self, X: Union[Variable, np.ndarray]) -> Variable:
+    def forward(self, X: Variable) -> Variable:
         """ Forward propagation and model structure recording """
-        # TODO: is it necessary to set self.input only when the model is called for the first time? Hint: currently the input of the input layer should be updated every time.
-        if isinstance(X, Variable):
-            self.input = X
-        elif isinstance(X, np.ndarray):
-            self.input = Variable(X, derivable = True)
-        else:
-            pass
+        assert isinstance(X, Variable)
+        self.input = X # TODO: is it necessary to set self.input only when the model is called for the first time? Hint: currently the input of the input layer should be updated every time.
         pass # forward propagation and results -> self.output
         pass # return self.output
     

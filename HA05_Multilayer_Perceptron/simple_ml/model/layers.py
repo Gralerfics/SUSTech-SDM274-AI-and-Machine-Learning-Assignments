@@ -5,7 +5,7 @@ from ..data.types import Variable
 
 
 class Linear(Model):
-    def __init__(self, in_dim: int, out_dim: int, debug_init_weights = False):
+    def __init__(self, in_dim: int, out_dim: int, zero_init_weights = False):
         super(Linear, self).__init__()
         self.n = in_dim
         self.m = out_dim
@@ -29,9 +29,9 @@ class Linear(Model):
                     [x_0^(N - 1), x_1^(N - 1), ..., x_n^(N - 1)]
                 ]
         """
-        if debug_init_weights: # TODO: to be removed
-            self.W = Variable(np.ones((self.n, self.m)), derivable = True)
-            self.b = Variable(np.ones(self.m), derivable = True)
+        if zero_init_weights:
+            self.W = Variable(np.zeros((self.n, self.m)), derivable = True)
+            self.b = Variable(np.zeros(self.m), derivable = True)
         else:
             self.W = Variable(np.random.randn(self.n, self.m), derivable = True)
             self.b = Variable(np.random.randn(self.m), derivable = True)
@@ -84,12 +84,17 @@ class ReLU(Model):
 
 
 class Sigmoid(Model):
+    def __init__(self, x_left_bound = -100, x_right_bound = 100):
+        super(Sigmoid, self).__init__()
+        self.x_left_bound = x_left_bound
+        self.x_right_bound = x_right_bound
+    
     def forward(self, X):
         super(Sigmoid, self).forward(X)
         """
             Y = 1 / (1 + exp(-X))
         """
-        self.output = Variable(1 / (1 + np.exp(-X.value)), derivable = True)
+        self.output = Variable(1 / (1 + np.exp(np.clip(-X.value, self.x_left_bound, self.x_right_bound))), derivable = True)
         return self.output
     
     def backward(self):

@@ -12,9 +12,13 @@ class Variable:
         self._derivable = derivable
     
     @property
+    def shape(self):
+        return self.value.shape
+
+    @property
     def G(self):
         return self.gradient
-    
+
     @property
     def T(self):
         return self.transpose()

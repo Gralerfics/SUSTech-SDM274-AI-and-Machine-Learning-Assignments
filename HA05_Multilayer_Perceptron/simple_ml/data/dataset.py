@@ -26,17 +26,17 @@ class Dataset:
             else:
                 pass # TODO: other file types
         
-        self.length = self.data_raw.shape[0]
-
         self.datas: Union[np.ndarray, list[np.ndarray]] = self.preprocess_func(self.data_raw)
             # np.ndarray for the case of only one data source, list[np.ndarray] for the case of multiple data sources
     
     """ @Override """
     def default_preprocess_func(self, data: np.ndarray):
-        return data # only one element, no list wrapping
+        pass # modify/fill data (the reference to self.data_raw)
+        return data # return a list of spilt tables (each of them is a view sliced from self.data_raw, so self.data_raw is not needed to be deleted)
+            # only one element, no list wrapping
 
     def __len__(self):
-        return self.length
+        return self.data_raw.shape[0]
 
     def __getitem__(self, index):
         if isinstance(self.datas, np.ndarray):
@@ -77,9 +77,26 @@ class DataIterator:
         
         self.next_idx += self.batch_size
         batch_data = self.dataset[batch_indices]
-        return batch_data # return in np.ndarray, Model().forward(X) can accept that and automatically wrap it into Variable.
+        return batch_data # return in np.ndarray
 
 
-# def split_dataset_train_and_test(dataset, test_ratio = 0.2):
+def split_train_and_test_dataset(dataset, test_ratio = 0.2, seed = None):
+    data_raw = dataset.data_raw.copy()
+    preprocess_func = dataset.preprocess_func
+    del dataset # TODO
 
+    N = data_raw.shape[0]
+
+    if seed is not None:
+        np.random.seed(seed)
+    indices = np.arange(N)
+    np.random.shuffle(indices)
+
+    split_index = int(N * (1 - test_ratio))
+    train_indices, test_indices = indices[:split_index], indices[split_index:]
+
+    train_dataset = Dataset(data = data_raw[train_indices], preprocess_func = preprocess_func)
+    test_dataset = Dataset(data = data_raw[test_indices], preprocess_func = preprocess_func)
+
+    return train_dataset, test_dataset
 
