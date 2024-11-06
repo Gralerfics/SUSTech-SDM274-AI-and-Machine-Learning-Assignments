@@ -11,15 +11,15 @@ from simple_ml.training.loss import MSELoss, CrossEntropyLoss
 from simple_ml.training.optimizer import GD, Adam
 
 
-# data_np = generate_2d_classification_circle()
-data_np = generate_2d_classification_exclusive_or()
+data_np = generate_2d_classification_circle()
+# data_np = generate_2d_classification_exclusive_or()
 
 def label_split(data: np.ndarray):
     return data[:, :-1], data[:, -1].reshape(-1, 1) # [x_0, x_1], t
 
 dataset = Dataset(data = data_np, preprocess_func = label_split)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
-train_iter = DataIterator(train_dataset, batch_size = 20, shuffle = True, cyclic = False)
+train_iter = DataIterator(train_dataset, batch_size = 10, shuffle = True, cyclic = False)
 
 # model = Sequential([
 #     Linear(2, 8),
@@ -29,27 +29,27 @@ train_iter = DataIterator(train_dataset, batch_size = 20, shuffle = True, cyclic
 #     Linear(8, 1)
 # ])
 
-model = Sequential([
-    Linear(2, 4),
-    Tanh(),
-    Linear(4, 2),
-    Tanh(),
-    Linear(2, 1)
-])
-
 # model = Sequential([
 #     Linear(2, 4),
-#     ReLU(),
+#     Tanh(),
 #     Linear(4, 2),
-#     ReLU(),
+#     Tanh(),
 #     Linear(2, 1)
 # ])
 
-criterion = MSELoss()
-# optimizer = GD(model.params, lr = 0.01)
-optimizer = Adam(model.params, lr = 0.01)
+model = Sequential([
+    Linear(2, 4),
+    ReLU(),
+    Linear(4, 2),
+    ReLU(),
+    Linear(2, 1)
+])
 
-epoch_num = 1000
+criterion = MSELoss()
+optimizer = GD(model.params, lr = 0.01)
+# optimizer = Adam(model.params, lr = 0.008)
+
+epoch_num = 10000
 train_loss_history = []
 
 # PLOT
@@ -80,8 +80,8 @@ for epoch in range(epoch_num):
     train_loss = 0
 
     for batch, [features, labels] in enumerate(train_iter):
-        mesh_prediction = model(Variable(features, derivable = True))
-        loss = criterion(mesh_prediction, labels)
+        mesh_prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable
+        loss = criterion(mesh_prediction, labels) # calculate loss and gradient (!)
 
         model.backward()
         optimizer.step()

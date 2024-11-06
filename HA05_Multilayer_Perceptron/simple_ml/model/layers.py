@@ -5,7 +5,7 @@ from ..data.types import Variable
 
 
 class Linear(Model):
-    def __init__(self, in_dim: int, out_dim: int, zero_init_weights = False):
+    def __init__(self, in_dim: int, out_dim: int):
         super(Linear, self).__init__()
         self.n = in_dim
         self.m = out_dim
@@ -29,12 +29,8 @@ class Linear(Model):
                     [x_0^(N - 1), x_1^(N - 1), ..., x_n^(N - 1)]
                 ]
         """
-        if zero_init_weights:
-            self.W = Variable(np.zeros((self.n, self.m)), derivable = True)
-            self.b = Variable(np.zeros(self.m), derivable = True)
-        else:
-            self.W = Variable(np.random.randn(self.n, self.m), derivable = True)
-            self.b = Variable(np.random.randn(self.m), derivable = True)
+        self.W = Variable(np.random.rand(self.n, self.m) - 0.5, derivable = True)
+        self.b = Variable(np.zeros(self.m), derivable = True) # TODO: supposed center?
         self.params = [self.W, self.b]
 
     def forward(self, X):
