@@ -46,12 +46,17 @@ cdict = {
 }
 cmap = LinearSegmentedColormap("my_cmap", cdict)
 
-fig, ax = plt.subplots()
-scatter = ax.scatter([], [], c = [], s = 30, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
-img = ax.imshow(np.zeros_like(x1), extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
-plt.colorbar(img, label = "Model Output")
-plt.xlabel("x_1")
-plt.ylabel("x_2")
+fig, (ax_data, ax_loss) = plt.subplots(1, 2, figsize = (15, 5))
+fig.subplots_adjust(wspace = 0.4)
+ax_data.set_aspect(1)
+
+scatter = ax_data.scatter([], [], c = [], s = 30, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
+img = ax_data.imshow(np.zeros_like(x1), extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
+plt.colorbar(img, ax = ax_data, label = "Model Output")
+ax_data.set_xlabel("x_1")
+ax_data.set_ylabel("x_2")
+ax_loss.set_xlabel("Epoch")
+ax_loss.set_ylabel("Training Loss")
 # PLOT
 
 for epoch in range(epoch_num):
@@ -67,18 +72,19 @@ for epoch in range(epoch_num):
         train_loss += loss
     
     train_loss_history.append(train_loss / len(dataset))
-    # print(train_loss / len(dataset))
 
     # PLOT
-    ax.clear()
-    
-    ax.scatter(data_np[:, 0], data_np[:, 1], c = data_np[:, 2], s = 30, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
+    ax_data.clear()
 
+    ax_data.scatter(data_np[:, 0], data_np[:, 1], c = data_np[:, 2], s = 30, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
     mesh_prediction = model(Variable(mesh_features, derivable = False))
     z = mesh_prediction.value.reshape(x1.shape)
-    
-    img = ax.imshow(z, extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
-    ax.set_title(f"Epoch {epoch + 1}")
+    img = ax_data.imshow(z, extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
+    ax_data.set_title(f"Epoch {epoch + 1}")
+
+    ax_loss.clear()
+    ax_loss.plot(train_loss_history, color = 'black')
+    ax_loss.set_title("Training Loss")
 
     plt.pause(0.001)
     # PLOT
