@@ -5,7 +5,7 @@ from matplotlib.colors import LinearSegmentedColormap
 
 from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
 from simple_ml.data.samples import generate_2d_classification_circle, generate_2d_classification_exclusive_or
-from simple_ml.evaluation.criterion import eval_binary_accuracy
+from simple_ml.evaluation.criterion import eval_binary_accuracy, eval_binary_recall, eval_binary_precision, eval_binary_f1_score
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
@@ -98,7 +98,10 @@ for epoch in range(epoch_num):
     # evaluate on the test set
     test_prediction = model(Variable(test_dataset.datas[0], derivable = False))
     accuracy = eval_binary_accuracy(test_prediction, test_dataset.datas[1])
-    print(f"Test Accuracy: {accuracy * 100:.2f} %")
+    recall = eval_binary_recall(test_prediction, test_dataset.datas[1])
+    precision = eval_binary_precision(test_prediction, test_dataset.datas[1])
+    f1_score = eval_binary_f1_score(test_prediction, test_dataset.datas[1])
+    print(f"Test Accuracy: {accuracy * 100:.2f} %\tTest Recall: {recall * 100:.2f} %\tTest Precision: {precision * 100:.2f} %\tTest F1 Score: {f1_score * 100:.2f} %")
 
     # PLOT
     mesh_prediction = model(Variable(mesh_features, derivable = False))

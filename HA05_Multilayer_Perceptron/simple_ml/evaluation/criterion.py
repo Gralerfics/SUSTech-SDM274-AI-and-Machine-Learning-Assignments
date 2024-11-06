@@ -7,6 +7,8 @@ from ..data.types import Variable
 
 def eval_binary_accuracy(Y: Union[Variable, np.ndarray], T: np.ndarray, decision_boundary = 0.0, label_pos: int = 1, label_neg: int = -1, z_func = None):
     """
+        Accuracy = T / (T + F) = (TP + TN) / (TP + TN + FP + FN)
+
         Y: the output of the model (output values)
         T: the target (label) of the model output (one of two integers)
 
@@ -22,7 +24,54 @@ def eval_binary_accuracy(Y: Union[Variable, np.ndarray], T: np.ndarray, decision
         Y = z_func(Y)
     else:
         Y = np.where(Y >= decision_boundary, label_pos, label_neg)
-    return np.mean(np.round(Y).astype(int) == T.astype(int))
+    Y = np.round(Y).astype(int)
+    T = T.astype(int)
+    return np.mean(Y == T)
+
+
+def eval_binary_recall(Y: Union[Variable, np.ndarray], T: np.ndarray, decision_boundary = 0.0, label_pos: int = 1, label_neg: int = -1, z_func = None):
+    """
+        Recall = TP / (TP + FN)
+
+        The same as eval_binary_accuracy, but return the recall rate.
+    """
+    if isinstance(Y, Variable):
+        Y = Y.value
+    if z_func is not None:
+        Y = z_func(Y)
+    else:
+        Y = np.where(Y >= decision_boundary, label_pos, label_neg)
+    Y = np.round(Y).astype(int)
+    T = T.astype(int)
+    return np.sum((Y == T) & (T == label_pos)) / np.sum(T == label_pos)
+
+
+def eval_binary_precision(Y: Union[Variable, np.ndarray], T: np.ndarray, decision_boundary = 0.0, label_pos: int = 1, label_neg: int = -1, z_func = None):
+    """
+        Precision = TP / P = TP / (TP + FP)
+
+        The same as eval_binary_accuracy, but return the precision rate.
+    """
+    if isinstance(Y, Variable):
+        Y = Y.value
+    if z_func is not None:
+        Y = z_func(Y)
+    else:
+        Y = np.where(Y >= decision_boundary, label_pos, label_neg)
+    Y = np.round(Y).astype(int)
+    T = T.astype(int)
+    return np.sum((Y == T) & (T == label_pos)) / np.sum(Y == label_pos)
+
+
+def eval_binary_f1_score(Y: Union[Variable, np.ndarray], T: np.ndarray, decision_boundary = 0.0, label_pos: int = 1, label_neg: int = -1, z_func = None):
+    """
+        F1 Score = 2 * Precision * Recall / (Precision + Recall)
+
+        The same as eval_binary_accuracy, but return the F1 score.
+    """
+    precision = eval_binary_precision(Y, T, decision_boundary, label_pos, label_neg, z_func)
+    recall = eval_binary_recall(Y, T, decision_boundary, label_pos, label_neg, z_func)
+    return 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0
 
 
 def eval_classify_accuracy(Y: Union[Variable, np.ndarray], T: np.ndarray):
