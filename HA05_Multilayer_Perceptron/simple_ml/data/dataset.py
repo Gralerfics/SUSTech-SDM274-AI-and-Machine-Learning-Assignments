@@ -48,7 +48,7 @@ class Dataset:
 class DataIterator:
     def __init__(self, dataset, batch_size = 1, shuffle = False, cyclic = False):
         self.dataset: Dataset = dataset
-        self.batch_size: int = batch_size if batch_size is not None else len(dataset)
+        self.batch_size: int = min(batch_size, len(dataset)) if batch_size is not None else len(dataset)
         self.shuffle: bool = shuffle
         self.cyclic: bool = cyclic
 
