@@ -1,7 +1,6 @@
 import numpy as np
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 
 from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
 from simple_ml.data.samples import generate_2d_classification_circle, generate_2d_classification_exclusive_or
@@ -10,6 +9,7 @@ from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
 from simple_ml.training.optimizer import GD, Adam
+from simple_ml.visualization.plot import TwoFeaturesModelVisualizer
 
 
 data_np = generate_2d_classification_circle()
@@ -54,32 +54,8 @@ optimizer = GD(model.params, lr = 0.01)
 epoch_num = 10000
 train_loss_history = []
 
-# PLOT
-POINT_SIZE = 26
-
-x1, x2 = np.meshgrid(np.linspace(-6, 6, 100), np.linspace(-6, 6, 100))
-mesh_features = np.c_[x1.ravel(), x2.ravel()]
-
-cdict = {
-    'red':   [(0.0, 237 / 255, 237 / 255), (0.5, 233 / 255, 233 / 255), (1.0, 39 / 255, 39 / 255)],
-    'green': [(0.0, 153 / 255, 153 / 255), (0.5, 233 / 255, 233 / 255), (1.0, 122 / 255, 122 / 255)],
-    'blue':  [(0.0, 65 / 255, 65 / 255), (0.5, 233 / 255, 233 / 255), (1.0, 185 / 255, 185 / 255)]
-}
-cmap = LinearSegmentedColormap("my_cmap", cdict)
-
-fig, (ax_data, ax_loss) = plt.subplots(1, 2, figsize = (15, 5))
-fig.subplots_adjust(wspace = 0.3)
-ax_data.set_aspect(1)
-
-scatter_train = ax_data.scatter([], [], c = [], s = POINT_SIZE, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
-scatter_test = ax_data.scatter([], [], c = [], s = POINT_SIZE, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'black', linewidths = 1)
-img = ax_data.imshow(np.zeros_like(x1), extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
-plt.colorbar(img, ax = ax_data, label = "Model Output")
-ax_data.set_xlabel("x_1")
-ax_data.set_ylabel("x_2")
-ax_loss.set_xlabel("Epoch")
-ax_loss.set_ylabel("Training Loss")
-# PLOT
+# initialize the plot
+visualizer = TwoFeaturesModelVisualizer(model, train_dataset, test_dataset, x1_range = (-6, 6, 100), x2_range = (-6, 6, 100), output_range = (-1, 1))
 
 for epoch in range(epoch_num):
     train_loss = 0
@@ -103,24 +79,9 @@ for epoch in range(epoch_num):
     f1_score = eval_binary_f1_score(test_prediction, test_dataset.datas[1])
     print(f"Test Accuracy: {accuracy * 100:.2f} %\tTest Recall: {recall * 100:.2f} %\tTest Precision: {precision * 100:.2f} %\tTest F1 Score: {f1_score * 100:.2f} %")
 
-    # PLOT
-    mesh_prediction = model(Variable(mesh_features, derivable = False))
-    z = mesh_prediction.value.reshape(x1.shape)
-
+    # update the plot
     if epoch % 10 == 0:
-        ax_data.clear()
-        ax_data.scatter(train_dataset.data_raw[:, 0], train_dataset.data_raw[:, 1], c = train_dataset.data_raw[:, 2], s = POINT_SIZE, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
-        ax_data.scatter(test_dataset.data_raw[:, 0], test_dataset.data_raw[:, 1], c = test_dataset.data_raw[:, 2], s = POINT_SIZE, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'black', linewidths = 1)
-        
-        img = ax_data.imshow(z, extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
-        ax_data.set_title(f"Epoch {epoch}")
-
-        ax_loss.clear()
-        ax_loss.plot(train_loss_history, color = 'black')
-        ax_loss.set_title("Training Loss")
-
-        plt.pause(0.001)
-    # PLOT
+        visualizer.update(epoch, train_loss_history)
 
 plt.show()
 
