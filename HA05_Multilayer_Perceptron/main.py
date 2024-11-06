@@ -5,6 +5,7 @@ from matplotlib.colors import LinearSegmentedColormap
 
 from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
 from simple_ml.data.samples import generate_2d_classification_circle, generate_2d_classification_exclusive_or
+from simple_ml.evaluation.criterion import eval_binary_accuracy
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
@@ -46,6 +47,7 @@ model = Sequential([
 ])
 
 criterion = MSELoss()
+# criterion = CrossEntropyLoss() # the output of the model should be in (0, 1), i.e. Sigmoid
 optimizer = GD(model.params, lr = 0.01)
 # optimizer = Adam(model.params, lr = 0.008)
 
@@ -53,6 +55,8 @@ epoch_num = 10000
 train_loss_history = []
 
 # PLOT
+POINT_SIZE = 26
+
 x1, x2 = np.meshgrid(np.linspace(-6, 6, 100), np.linspace(-6, 6, 100))
 mesh_features = np.c_[x1.ravel(), x2.ravel()]
 
@@ -67,7 +71,8 @@ fig, (ax_data, ax_loss) = plt.subplots(1, 2, figsize = (15, 5))
 fig.subplots_adjust(wspace = 0.3)
 ax_data.set_aspect(1)
 
-scatter = ax_data.scatter([], [], c = [], s = 30, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
+scatter_train = ax_data.scatter([], [], c = [], s = POINT_SIZE, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
+scatter_test = ax_data.scatter([], [], c = [], s = POINT_SIZE, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'black', linewidths = 1)
 img = ax_data.imshow(np.zeros_like(x1), extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
 plt.colorbar(img, ax = ax_data, label = "Model Output")
 ax_data.set_xlabel("x_1")
@@ -80,8 +85,8 @@ for epoch in range(epoch_num):
     train_loss = 0
 
     for batch, [features, labels] in enumerate(train_iter):
-        mesh_prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable
-        loss = criterion(mesh_prediction, labels) # calculate loss and gradient (!)
+        prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable
+        loss = criterion(prediction, labels) # calculate loss and gradient (!)
 
         model.backward()
         optimizer.step()
@@ -90,20 +95,28 @@ for epoch in range(epoch_num):
     
     train_loss_history.append(train_loss / len(dataset))
 
-    # PLOT
-    ax_data.clear()
+    # evaluate on the test set
+    test_prediction = model(Variable(test_dataset.datas[0], derivable = False))
+    accuracy = eval_binary_accuracy(test_prediction, test_dataset.datas[1])
+    print(f"Test Accuracy: {accuracy * 100:.2f} %")
 
-    ax_data.scatter(data_np[:, 0], data_np[:, 1], c = data_np[:, 2], s = 30, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
+    # PLOT
     mesh_prediction = model(Variable(mesh_features, derivable = False))
     z = mesh_prediction.value.reshape(x1.shape)
-    img = ax_data.imshow(z, extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
-    ax_data.set_title(f"Epoch {epoch + 1}")
 
-    ax_loss.clear()
-    ax_loss.plot(train_loss_history, color = 'black')
-    ax_loss.set_title("Training Loss")
+    if epoch % 10 == 0:
+        ax_data.clear()
+        ax_data.scatter(train_dataset.data_raw[:, 0], train_dataset.data_raw[:, 1], c = train_dataset.data_raw[:, 2], s = POINT_SIZE, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'white', linewidths = 1)
+        ax_data.scatter(test_dataset.data_raw[:, 0], test_dataset.data_raw[:, 1], c = test_dataset.data_raw[:, 2], s = POINT_SIZE, cmap = cmap, vmin = -1, vmax = 1, edgecolors = 'black', linewidths = 1)
+        
+        img = ax_data.imshow(z, extent = (-6, 6, -6, 6), origin = 'lower', cmap = cmap, vmin = -1, vmax = 1)
+        ax_data.set_title(f"Epoch {epoch}")
 
-    plt.pause(0.001)
+        ax_loss.clear()
+        ax_loss.plot(train_loss_history, color = 'black')
+        ax_loss.set_title("Training Loss")
+
+        plt.pause(0.001)
     # PLOT
 
 plt.show()
