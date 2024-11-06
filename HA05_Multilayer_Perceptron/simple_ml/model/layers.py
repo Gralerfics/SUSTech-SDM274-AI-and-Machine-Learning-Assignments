@@ -124,3 +124,27 @@ class Tanh(Model): # TODO: to be checked
         """
         self.input.gradient = self.output.gradient * (1 - self.output.value ** 2)
 
+
+class Softmax(Model): # TODO: to be checked
+    def __init__(self, x_left_bound = -100, x_right_bound = 100, epsilon = 1e-8):
+        super(Softmax, self).__init__()
+        self.x_left_bound = x_left_bound
+        self.x_right_bound = x_right_bound
+        self.epsilon = epsilon
+    
+    def forward(self, X):
+        super(Softmax, self).forward(X)
+        """
+            Y = exp(X) / Sum_{i=0}^{n-1} {exp(X_i)}
+        """
+        exp = np.exp(np.clip(X.value, self.x_left_bound, self.x_right_bound))
+        self.output = Variable(exp / np.sum(exp, axis = 1, keepdims = True), derivable = True)
+        return self.output
+    
+    def backward(self):
+        """
+            dE/dX = dE/dY * dY/dX = dE/dY * (diag(Y) - Y @ Y.T)
+        """
+        Y = self.output.value
+        self.input.gradient = self.output.gradient * (np.diag(Y) - Y[:, :, None] @ Y[:, None, :])   
+
