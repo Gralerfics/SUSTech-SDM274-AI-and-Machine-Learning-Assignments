@@ -32,7 +32,7 @@ class Loss:
 
 
 class MSELoss(Loss):
-    def forward(self, X, T):
+    def forward(self, X, T): # TODO: 实现单维 T 自动转列向量，下同（在基类中实现一个函数？）。若只有一维，需从 X 形状判断其为多维单样本还是单维多样本。
         return np.mean((X.value - T) ** 2) / 2
     
     def backward(self, X, T):
