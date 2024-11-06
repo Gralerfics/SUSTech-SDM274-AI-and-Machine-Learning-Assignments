@@ -42,21 +42,29 @@ from simple_ml.training.optimizer import GD #, Adam
 # ])
 
 # criterion = MSELoss()
-# optimizer = GD(model.params, lr = 0.01)
+# optimizer = GD(model.params, lr = 0.001)
 
 
-# dataset = Dataset(file_path = "wine.data")
-# data_iter = DataIterator(dataset, batch_size = 10, shuffle = True, cyclic = True)
+# def label_split(data: np.ndarray):
+#     return data[:, 1:], data[:, 0].astype(int) # X, T
+
+# dataset = Dataset(file_path = "wine.data", preprocess_func = label_split)
+# dataset_it = DataIterator(dataset, batch_size = 10, shuffle = True, cyclic = False)
 
 
+# train_loss_history = []
 # for epoch in range(100):
-#     for X_np in data_iter:
-#         out = model(X_np)
-#         loss = criterion(out, )
+#     train_loss = 0
+#     for batch, [features, labels] in enumerate(dataset_it):
+#         prediction = model(features)
+#         loss = criterion(prediction, labels)
 
 #         # optimizer.zeroize_gradients()
 #         model.backward()
 #         optimizer.step()
+
+#         train_loss += loss
+#     train_loss_history.append(train_loss / len(dataset))
 
 
 # print("Loss value:\n", loss, "\n")
@@ -93,7 +101,7 @@ def label_split(data: np.ndarray):
     return data[:, 1:], data[:, 0].astype(int) # X, T
 
 dataset = Dataset(file_path = "wine.data", preprocess_func = label_split)
-data_iter = DataIterator(dataset, batch_size = 10, shuffle = False, cyclic = True)
+data_iter = DataIterator(dataset, batch_size = 10, shuffle = False, cyclic = False)
 
 for i, [x, t] in enumerate(data_iter):
     print(i, x[:, :2], t)

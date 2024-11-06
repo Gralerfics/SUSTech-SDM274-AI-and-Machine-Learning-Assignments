@@ -64,14 +64,14 @@ class DataIterator:
     def __next__(self):
         exceed = self.next_idx - len(self.dataset)
         if exceed >= 0:
-            if self.cyclic:
+            if exceed >= self.batch_size: # totally exceeded
+                raise StopIteration
+            batch_indices = self.indices[(self.next_idx - self.batch_size):] # collect left samples
+            if self.cyclic: # cyclic, complete the batch
                 self.next_idx = exceed
-                batch_indices = self.indices[(self.next_idx - self.batch_size):]
                 if self.shuffle:
                     random.shuffle(self.indices)
                 batch_indices.extend(self.indices[:exceed])
-            else:
-                raise StopIteration
         else:
             batch_indices = self.indices[(self.next_idx - self.batch_size):self.next_idx]
         
