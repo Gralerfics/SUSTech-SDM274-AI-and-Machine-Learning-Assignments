@@ -14,10 +14,10 @@ class Optimizer:
 class GD(Optimizer):
     """
         Gradient Descent Optimizer
-        P.S. batch is decided by the data provider - in any case, the Variable().value's first dimension is the batch size.
+        P.S. batch is decided by the data provider - in any case, the Variable().value's 0-th dimension is the batch size.
     """
     def __init__(self, params, lr = 0.01):
-        super().__init__(params)
+        super(GD, self).__init__(params)
         self.lr = lr
     
     # def zeroize_gradients(self): # TODO: is needed? my gradient calculation are currently not accumulative.
@@ -36,7 +36,7 @@ class GD(Optimizer):
 #         Adam Optimizer
 #     """
 #     def __init__(self, params, lr = 0.001, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8):
-#         super().__init__(params)
+#         super(Adam, self).__init__(params)
 #         self.lr = lr
 #         self.beta1 = beta1
 #         self.beta2 = beta2

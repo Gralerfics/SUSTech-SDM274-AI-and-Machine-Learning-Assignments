@@ -1,12 +1,12 @@
 import numpy as np
 
 from . import Model
-from .. import Variable
+from ..data.types import Variable
 
 
 class Linear(Model):
     def __init__(self, in_dim: int, out_dim: int, debug_init_weights = False):
-        super().__init__()
+        super(Linear, self).__init__()
         self.n = in_dim
         self.m = out_dim
         """
@@ -38,7 +38,7 @@ class Linear(Model):
         self.params = [self.W, self.b]
 
     def forward(self, X):
-        super().forward(X)
+        super(Linear, self).forward(X)
         """
             Y = X @ W + b
         """
@@ -69,7 +69,7 @@ class Linear(Model):
 
 class ReLU(Model):
     def forward(self, X):
-        super().forward(X)
+        super(ReLU, self).forward(X)
         """
             Y = max(X, 0)
         """
@@ -85,7 +85,7 @@ class ReLU(Model):
 
 class Sigmoid(Model):
     def forward(self, X):
-        super().forward(X)
+        super(Sigmoid, self).forward(X)
         """
             Y = 1 / (1 + exp(-X))
         """

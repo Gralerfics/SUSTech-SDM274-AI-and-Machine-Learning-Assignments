@@ -1,6 +1,6 @@
 import numpy as np
 
-from .. import Variable
+from ..data.types import Variable
 
 
 class Model:
@@ -14,9 +14,15 @@ class Model:
         pass # parameters -> self.params
     
     """ @Override (super().forward(X) should be called) """
-    def forward(self, X: Variable) -> Variable:
+    def forward(self, X: Variable | np.ndarray) -> Variable:
         """ Forward propagation and model structure recording """
-        self.input = X # TODO: is it necessary to set self.input only when the model is called for the first time? Hint: currently the input of the input layer should be updated every time.
+        # TODO: is it necessary to set self.input only when the model is called for the first time? Hint: currently the input of the input layer should be updated every time.
+        if isinstance(X, Variable):
+            self.input = X
+        elif isinstance(X, np.ndarray):
+            self.input = Variable(X, derivable = True)
+        else:
+            pass
         pass # forward propagation and results -> self.output
         pass # return self.output
     
@@ -35,13 +41,13 @@ class Model:
 
 class Sequential(Model):
     def __init__(self, layers_list):
-        super().__init__()
+        super(Sequential, self).__init__()
         self.layers = layers_list
         for layer in self.layers:
             self.params.extend(layer.parameters())
     
     def forward(self, X):
-        super().forward(X)
+        super(Sequential, self).forward(X)
         self.output = X
         for layer in self.layers:
             self.output = layer(self.output)

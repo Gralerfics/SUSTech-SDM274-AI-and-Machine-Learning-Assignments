@@ -1,3 +1,4 @@
+from .data.dataset import Dataset, DataIterator
 from .data.types import Variable
 
 

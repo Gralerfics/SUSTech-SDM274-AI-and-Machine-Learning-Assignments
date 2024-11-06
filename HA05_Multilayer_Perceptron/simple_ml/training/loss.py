@@ -1,6 +1,6 @@
 import numpy as np
 
-from .. import Variable
+from ..data.types import Variable
 
 
 class Loss:
