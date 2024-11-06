@@ -2,8 +2,8 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
-from simple_ml.data.samples import generate_2d_classification_circle, generate_2d_classification_exclusive_or
+from simple_ml import Variable, Dataset, DataIterator, merge_datasets, split_train_and_test_dataset, split_k_fold_cross_validation_dataset
+from simple_ml.data.samples import label_split_for_2d_classification_dataset, generate_2d_classification_circle, generate_2d_classification_exclusive_or
 from simple_ml.evaluation.criterion import eval_binary_accuracy, eval_binary_recall, eval_binary_precision, eval_binary_f1_score
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
@@ -13,23 +13,19 @@ from simple_ml.visualization.plot import TwoFeaturesModelVisualizer
 
 
 """ Dataset """
-data_np = generate_2d_classification_circle()
+data_np = generate_2d_classification_circle(N = 1000)
 # data_np = generate_2d_classification_exclusive_or()
 
-def label_split(data: np.ndarray):
-    return data[:, :-1], data[:, -1].reshape(-1, 1) # [x_0, x_1], t
-
-dataset = Dataset(data = data_np, preprocess_func = label_split)
+dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
-train_iter = DataIterator(train_dataset, batch_size = 10, shuffle = True, cyclic = False)
 
 
 """ Model """
 model = Sequential([
     Linear(2, 4),
-    ReLU(),
+    Sigmoid(),
     Linear(4, 2),
-    ReLU(),
+    Sigmoid(),
     Linear(2, 1)
 ])
 
@@ -40,52 +36,71 @@ loss_func = MSELoss()
 optimizer = Adam(model.params, lr = 0.003)
 
 
-""" Training """
-epoch_num = 10000
-train_loss_history = []
-train_accuracy_history = []
-test_loss_history = []
-test_accuracy_history = []
+""" Cross-Validation & Training """
+K = 5
+datasets = split_k_fold_cross_validation_dataset(train_dataset, k = K)
 
-# initialize the plot
-visualizer = TwoFeaturesModelVisualizer(model, train_dataset, test_dataset, x1_range = (-6, 6, 100), x2_range = (-6, 6, 100), output_range = (-1, 1))
+losses = []
+accuracies = []
+recalls = []
+precisions = []
+f1_scores = []
 
-for epoch in range(epoch_num):
-    train_loss = 0
-    train_accuracy = 0
+for i in range(K + 1):
+    if i < K:
+        print(f"[Info] Training on cross-validation fold {i + 1} / {K}")
+    else:
+        print(f"[Info] Training on whole training set")
 
-    for batch, [features, labels] in enumerate(train_iter):
-        prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable
-        loss = loss_func(prediction, labels) # calculate loss and gradient (!)
+    # prepare train and validation set
+    if i < K:
+        train_ds = merge_datasets([datasets[j] for j in range(K) if j != i])
+        valid_ds = datasets[i]
+    else:
+        train_ds = train_dataset
+        valid_ds = test_dataset
+    train_iter_kfold = DataIterator(train_ds, batch_size = 10, shuffle = True, cyclic = False)
 
-        model.backward()
-        optimizer.step()
+    # train
+    epoch_num = 20
+    for epoch in range(epoch_num):
+        for batch, [features, labels] in enumerate(train_iter_kfold):
+            prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable
+            loss = loss_func(prediction, labels) # calculate loss and gradient (!)
 
-        train_loss += loss
-        train_accuracy += eval_binary_accuracy(prediction, labels)
-    
-    # record training loss and accuracy
-    train_loss /= len(train_dataset)
-    train_accuracy /= len(train_dataset)
-    train_loss_history.append(train_loss)
-    train_accuracy_history.append(train_accuracy)
+            model.backward()
+            optimizer.step()
 
-    # record testing loss and accuracy
-    test_prediction = model(Variable(test_dataset.datas[0], derivable = True))
-    test_loss = loss_func(test_prediction, test_dataset.datas[1])
-    test_accuracy = eval_binary_accuracy(test_prediction, test_dataset.datas[1])
-    # test_recall = eval_binary_recall(test_prediction, test_dataset.datas[1])
-    # test_precision = eval_binary_precision(test_prediction, test_dataset.datas[1])
-    # test_f1_score = eval_binary_f1_score(test_prediction, test_dataset.datas[1])
-    # print(f"Test Accuracy: {test_accuracy * 100:.2f} %\tTest Recall: {test_recall * 100:.2f} %\tTest Precision: {test_precision * 100:.2f} %\tTest F1 Score: {test_f1_score * 100:.2f} %")
-    test_loss_history.append(test_loss)
-    test_accuracy_history.append(test_accuracy)
+    # evaluate on validation/testing set
+    prediction = model(Variable(valid_ds.datas[0], derivable = True))
 
-    # update the plot
-    if epoch % 10 == 0:
-        visualizer.update(epoch, train_loss_history, train_accuracy_history, test_loss_history, test_accuracy_history)
+    losses.append(loss_func(prediction, valid_ds.datas[1]))
+    accuracies.append(eval_binary_accuracy(prediction, valid_ds.datas[1]))
+    recalls.append(eval_binary_recall(prediction, valid_ds.datas[1]))
+    precisions.append(eval_binary_precision(prediction, valid_ds.datas[1]))
+    f1_scores.append(eval_binary_f1_score(prediction, valid_ds.datas[1]))
 
+categories = ["Loss", "Accuracy", "Recall", "Precision", "F1 Score"]
+validation_results = [losses[:-1], accuracies[:-1], recalls[:-1], precisions[:-1], f1_scores[:-1]]
+averages = [np.mean(val) for val in validation_results]
+test_results = [losses[-1], accuracies[-1], recalls[-1], precisions[-1], f1_scores[-1]]
+
+bar_colors = ['#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF6820', '#544943']
+bar_width = 0.1
+bar_positions = np.arange(len(categories))
+
+plt.figure(figsize = (12, 6))
+for i in range(K):
+    plt.bar(bar_positions + i * bar_width, [val[i] for val in validation_results], width = bar_width, label = f'Validation Fold {i + 1}', color = bar_colors[i])
+plt.bar(bar_positions + K * bar_width, averages, width = bar_width, label = 'Validation Average', color = bar_colors[K])
+plt.bar(bar_positions + (K + 1) * bar_width, test_results, width = bar_width, label = 'Test', color = bar_colors[K + 1])
+
+plt.xlabel('Metrics')
+plt.ylabel('Values')
+plt.xticks(bar_positions + (K + 1) * bar_width / 2, categories)
+plt.legend()
 plt.show()
+
 
 
 # 数据集 -> 训练集 + 验证集

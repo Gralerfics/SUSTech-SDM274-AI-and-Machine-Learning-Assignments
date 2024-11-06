@@ -1,6 +1,10 @@
 import numpy as np
 
 
+def label_split_for_2d_classification_dataset(data: np.ndarray):
+    return data[:, :-1], data[:, -1].reshape(-1, 1) # [x_1, x_2], t
+
+
 def generate_2d_classification_circle(N = 500, r_0 = 2.3, r_1 = 3.5, r_2 = 5, noise = 0, label_in = 1, label_out = -1, seed = None):
     if seed is not None:
         np.random.seed(seed)

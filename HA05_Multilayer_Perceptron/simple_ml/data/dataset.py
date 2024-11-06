@@ -83,10 +83,16 @@ class DataIterator:
         return batch_data # return in np.ndarray
 
 
+def merge_datasets(datasets):
+    data_raw = np.concatenate([dataset.data_raw for dataset in datasets], axis = 0)
+    preprocess_func = datasets[0].preprocess_func
+    return Dataset(data = data_raw, preprocess_func = preprocess_func)
+
+
 def split_train_and_test_dataset(dataset, test_ratio = 0.2, seed = None):
     data_raw = dataset.data_raw.copy()
     preprocess_func = dataset.preprocess_func
-    del dataset # TODO
+    del dataset
 
     N = data_raw.shape[0]
 
@@ -102,4 +108,23 @@ def split_train_and_test_dataset(dataset, test_ratio = 0.2, seed = None):
     test_dataset = Dataset(data = data_raw[test_indices], preprocess_func = preprocess_func)
 
     return train_dataset, test_dataset
+
+
+def split_k_fold_cross_validation_dataset(dataset, k = 5, seed = None):
+    data_raw = dataset.data_raw.copy()
+    preprocess_func = dataset.preprocess_func
+    del dataset
+
+    N = data_raw.shape[0]
+
+    if seed is not None:
+        np.random.seed(seed)
+    indices = np.arange(N)
+    np.random.shuffle(indices)
+
+    fold_size = N // k
+    fold_indices = [indices[i * fold_size:(i + 1) * fold_size] for i in range(k - 1)]
+    fold_indices.append(indices[(k - 1) * fold_size:])
+
+    return [Dataset(data = data_raw[fold_indices[i]], preprocess_func = preprocess_func) for i in range(k)]
 

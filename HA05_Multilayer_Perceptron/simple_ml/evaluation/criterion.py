@@ -43,7 +43,8 @@ def eval_binary_recall(Y: Union[Variable, np.ndarray], T: np.ndarray, decision_b
         Y = np.where(Y >= decision_boundary, label_pos, label_neg)
     Y = np.round(Y).astype(int)
     T = T.astype(int)
-    return np.sum((Y == T) & (T == label_pos)) / np.sum(T == label_pos)
+    TP_FN = np.sum(T == label_pos)
+    return np.sum((Y == T) & (T == label_pos)) / TP_FN if TP_FN > 0 else 1
 
 
 def eval_binary_precision(Y: Union[Variable, np.ndarray], T: np.ndarray, decision_boundary = 0.0, label_pos: int = 1, label_neg: int = -1, z_func = None):
@@ -60,7 +61,8 @@ def eval_binary_precision(Y: Union[Variable, np.ndarray], T: np.ndarray, decisio
         Y = np.where(Y >= decision_boundary, label_pos, label_neg)
     Y = np.round(Y).astype(int)
     T = T.astype(int)
-    return np.sum((Y == T) & (T == label_pos)) / np.sum(Y == label_pos)
+    P = np.sum(Y == label_pos)
+    return np.sum((Y == T) & (T == label_pos)) / P if P > 0 else 1
 
 
 def eval_binary_f1_score(Y: Union[Variable, np.ndarray], T: np.ndarray, decision_boundary = 0.0, label_pos: int = 1, label_neg: int = -1, z_func = None):

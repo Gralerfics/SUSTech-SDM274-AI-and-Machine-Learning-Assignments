@@ -4,3 +4,4 @@ simple_ml/evaluation/__pycache__/
 simple_ml/model/__pycache__/
 simple_ml/training/__pycache__/
 simple_ml/visualization/__pycache__/
+test.py
