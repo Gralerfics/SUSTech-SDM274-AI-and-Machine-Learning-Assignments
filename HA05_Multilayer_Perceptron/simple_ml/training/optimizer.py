@@ -5,6 +5,10 @@ class Optimizer:
     """ @Override (super().__init__() should be called) """
     def __init__(self, params):
         self.params = params
+    
+    # def zeroize_gradients(self): # TODO: is needed? gradient calculation is currently not accumulative.
+    #     for param in self.params:
+    #         param.gradient = np.zeros_like(param.value)
 
     """ @Override """
     def step(self):
@@ -19,10 +23,6 @@ class GD(Optimizer):
     def __init__(self, params, lr = 0.01):
         super(GD, self).__init__(params)
         self.lr = lr
-    
-    # def zeroize_gradients(self): # TODO: is needed? gradient calculation is currently not accumulative.
-    #     for param in self.params:
-    #         param.gradient = np.zeros_like(param.value)
 
     def step(self):
         pass # TODO
@@ -32,9 +32,9 @@ class GD(Optimizer):
 
 class Adam(Optimizer):
     """
-        Adam Optimizer
+        Adam Optimizer (TODO: Regularization to be checked)
     """
-    def __init__(self, params, lr = 0.001, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8):
+    def __init__(self, params, lr = 0.001, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, regularization = None, regularization_lambda = 0.0):
         super(Adam, self).__init__(params)
         self.lr = lr
         self.beta1 = beta1
@@ -43,6 +43,8 @@ class Adam(Optimizer):
         self.t = 0
         self.m = [np.zeros_like(param.value) for param in self.params]
         self.v = [np.zeros_like(param.value) for param in self.params]
+        self.regularization = regularization
+        self.regularization_lambda = regularization_lambda
 
     def step(self):
         self.t += 1
@@ -51,5 +53,14 @@ class Adam(Optimizer):
             self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * param.gradient ** 2
             m_hat = self.m[i] / (1 - self.beta1 ** self.t)
             v_hat = self.v[i] / (1 - self.beta2 ** self.t)
-            param.value -= self.lr * m_hat / (np.sqrt(v_hat) + self.epsilon)
+
+            # regularization term
+            if self.regularization == "L1":
+                regularization_term = self.regularization_lambda * np.sign(param.value)
+            elif self.regularization == "L2":
+                regularization_term = self.regularization_lambda * param.value
+            else:
+                regularization_term = 0
+
+            param.value -= self.lr * (m_hat / (np.sqrt(v_hat) + self.epsilon) + regularization_term)
 
