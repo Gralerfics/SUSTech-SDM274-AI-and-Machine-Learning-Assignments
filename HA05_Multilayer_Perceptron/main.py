@@ -20,7 +20,7 @@ from simple_ml.dashboard.logger import TrainingDataLogger
 """ App """
 APP_NAME = 'simple_ml_dashboard'
 APP_HOST = 'localhost'
-APP_PORT = 4560
+APP_PORT = 2333
 SERIAL_POLL_INTERVAL = 0.2
 
 app = Sanic(APP_NAME)
