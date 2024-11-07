@@ -29,8 +29,11 @@ class Linear(Model):
                     [x_0^(N - 1), x_1^(N - 1), ..., x_n^(N - 1)]
                 ]
         """
-        self.W = Variable(np.random.rand(self.n, self.m) - 0.5, derivable = True)
-        self.b = Variable(np.zeros(self.m), derivable = True) # TODO: supposed center?
+        # self.W = Variable(np.random.randn(self.n, self.m), derivable = True)
+        self.W = Variable(np.random.uniform(-0.5, 0.5, (self.n, self.m)), derivable = True)
+        # self.b = Variable(np.random.randn(self.m), derivable = True)
+        self.b = Variable(np.ones(self.m) * 0.1, derivable = True)
+            # TODO: initial value selection?
         self.params = [self.W, self.b]
 
     def forward(self, X):

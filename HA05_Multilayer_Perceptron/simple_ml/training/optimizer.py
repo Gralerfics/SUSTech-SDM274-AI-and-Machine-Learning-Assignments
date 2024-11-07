@@ -25,9 +25,25 @@ class GD(Optimizer):
         self.lr = lr
 
     def step(self):
-        pass # TODO
         for param in self.params:
             param.value -= self.lr * param.gradient
+
+
+class MomentumGD(Optimizer):
+    """
+        Gradient Descent Optimizer with Momentum
+    """
+    def __init__(self, params, lr = 0.01, momentum = 0.9):
+        super(MomentumGD, self).__init__(params)
+        self.lr = lr
+        self.momentum = momentum
+        self.velocity = [np.zeros_like(param.value) for param in self.params]
+
+    def step(self):
+        for i, param in enumerate(self.params):
+            self.velocity[i] = self.momentum * self.velocity[i] - self.lr * param.gradient
+            param.value += self.velocity[i]
+
 
 
 class Adam(Optimizer):

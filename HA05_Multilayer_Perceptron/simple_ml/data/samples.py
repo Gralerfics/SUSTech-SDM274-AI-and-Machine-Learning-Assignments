@@ -44,3 +44,29 @@ def generate_2d_classification_exclusive_or(N = 500, l = 5.2, pad = 0.3, noise =
 
     return np.c_[coords, labels]
 
+
+def generate_2d_classification_gaussians(gaussian_configs, seed = None):
+    if seed is not None:
+        np.random.seed(seed)
+
+    data = np.zeros((0, 3))
+    for mean, cov, N, label in gaussian_configs:
+        data = np.r_[
+            data,
+            np.c_[np.random.multivariate_normal(mean, cov, N), np.ones((N, 1)) * label]
+        ]
+
+    return data
+
+
+def generate_1d_regression_with_function(N = 500, f = lambda x: 2 * x + 1, x_range = (-10, 10), noise = 1, seed = None):
+    assert f is not None
+
+    if seed is not None:
+        np.random.seed(seed)
+
+    x = np.random.uniform(*x_range, (N, 1))
+    y = f(x) + np.random.normal(0, noise, (N, 1))
+
+    return np.c_[x, y]
+

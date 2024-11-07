@@ -9,12 +9,12 @@ from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
 from simple_ml.training.optimizer import GD, Adam
-from simple_ml.visualization.plot import TwoFeaturesModelVisualizer
+from simple_ml.visualization.plot import TwoFeaturesClassificationModelVisualizer
 
 
 """ Dataset """
 data_np = generate_2d_classification_circle(N = 1000)
-# data_np = generate_2d_classification_exclusive_or()
+# data_np = generate_2d_classification_exclusive_or(N = 1000)
 
 dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
@@ -46,6 +46,8 @@ recalls = []
 precisions = []
 f1_scores = []
 
+epoch_num = 100
+
 for i in range(K + 1):
     if i < K:
         print(f"[Info] Training on cross-validation fold {i + 1} / {K}")
@@ -62,7 +64,6 @@ for i in range(K + 1):
     train_iter_kfold = DataIterator(train_ds, batch_size = 10, shuffle = True, cyclic = False)
 
     # train
-    epoch_num = 20
     for epoch in range(epoch_num):
         for batch, [features, labels] in enumerate(train_iter_kfold):
             prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable

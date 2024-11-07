@@ -87,3 +87,11 @@ def eval_classify_accuracy(Y: Union[Variable, np.ndarray], T: np.ndarray):
     T = np.argmax(T, axis = 1)
     return np.mean(Y == T)
 
+
+def eval_regression_r2(Y: Union[Variable, np.ndarray], T: np.ndarray): # TODO: to be checked
+    if isinstance(Y, Variable):
+        Y = Y.value
+    SS_res = np.sum((Y - T) ** 2)
+    SS_tot = np.sum((T - np.mean(T)) ** 2)
+    return 1 - SS_res / SS_tot if SS_tot > 0 else 0
+
