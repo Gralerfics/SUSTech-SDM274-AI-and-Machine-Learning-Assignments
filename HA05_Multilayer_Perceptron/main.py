@@ -1,20 +1,77 @@
+import asyncio
+
 import numpy as np
 
-import matplotlib.pyplot as plt
+from sanic import Sanic, response
+from sanic import HTTPResponse, Request, Websocket
 
-from simple_ml import Variable, Dataset, DataIterator, merge_datasets, split_train_and_test_dataset, split_k_fold_cross_validation_dataset
-from simple_ml.data.samples import label_split_for_2d_classification_dataset, generate_2d_classification_circle, generate_2d_classification_exclusive_or
-from simple_ml.evaluation.criterion import eval_binary_accuracy, eval_binary_recall, eval_binary_precision, eval_binary_f1_score
+from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
+from simple_ml.data.samples import label_split_for_2d_classification_dataset, generate_1d_regression_with_function
+from simple_ml.evaluation.criterion import eval_regression_r2
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
-from simple_ml.training.optimizer import GD, Adam
-from simple_ml.visualization.plot import TwoFeaturesClassificationModelVisualizer
+from simple_ml.training.optimizer import GD, MomentumGD, Adam
+
+from simple_ml.dashboard.comm import WebSocketClientsPool
+from simple_ml.dashboard.logger import TrainingDataLogger
+
+
+""" App """
+APP_NAME = 'simple_ml_dashboard'
+APP_HOST = 'localhost'
+APP_PORT = 4560
+SERIAL_POLL_INTERVAL = 0.2
+
+app = Sanic(APP_NAME)
+clients = WebSocketClientsPool()
+
+
+""" CORS Middleware """
+@app.middleware('request')
+async def cors_middle_req(request: Request):
+    if request.method.lower() == 'options':
+        allow_headers = [
+            'Authorization',
+            'content-type'
+        ]
+        headers = {
+            'Access-Control-Allow-Methods': ', '.join(['GET', 'POST', 'OPTIONS']),
+            'Access-Control-Max-Age': '86400',
+            'Access-Control-Allow-Headers': ', '.join(allow_headers),
+        }
+        return HTTPResponse('', headers=headers)
+
+@app.middleware('response')
+def cors_middle_res(request: Request, response: HTTPResponse):
+    allow_origin = '*'
+    response.headers.update(
+        {
+            'Access-Control-Allow-Origin': allow_origin,
+        }
+    )
+
+
+""" Routes """
+@app.route('/')
+async def index(request: Request):
+    return response.html(f'<p>{APP_NAME}</p>')
+
+@app.websocket('/notify') # new client
+async def notify(request: Request, ws: Websocket):
+    clients.append(ws)
+    try:
+        async for msg in ws:
+            print(f'Received: {msg}')
+    except Exception as e:
+        print(f'WebSocket error: {e}')
 
 
 """ Dataset """
-data_np = generate_2d_classification_circle(N = 1000)
-# data_np = generate_2d_classification_exclusive_or(N = 1000)
+def example_func(x):
+    return np.cos(x) + np.exp(-x ** 2) + x ** 3 / 233
+
+data_np = generate_1d_regression_with_function(N = 1000, f = example_func, x_range = (-10, 10), noise = 0.2)
 
 dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
@@ -22,141 +79,49 @@ train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
 
 """ Model """
 model = Sequential([
-    Linear(2, 4),
+    Linear(1, 5),
     Sigmoid(),
-    Linear(4, 2),
+    Linear(5, 7),
     Sigmoid(),
-    Linear(2, 1)
+    Linear(7, 1)
 ])
 
 loss_func = MSELoss()
-# loss_func = CrossEntropyLoss() # the output of the model should be in (0, 1), i.e. Sigmoid
 
-# optimizer = GD(model.params, lr = 0.01)
-optimizer = Adam(model.params, lr = 0.003)
+# optimizer = GD(model.params, lr = 0.1)
+# optimizer = MomentumGD(model.params, lr = 0.1, momentum = 0.8)
+optimizer = Adam(model.params, lr = 0.01)
 
 
-""" Cross-Validation & Training """
-K = 5
-datasets = split_k_fold_cross_validation_dataset(train_dataset, k = K)
+""" Training """
+train_iter = DataIterator(train_dataset, batch_size = 32, shuffle = True, cyclic = False)
+epoch_num = 1000000
 
-losses = []
-accuracies = []
-recalls = []
-precisions = []
-f1_scores = []
-
-epoch_num = 100
-
-for i in range(K + 1):
-    if i < K:
-        print(f"[Info] Training on cross-validation fold {i + 1} / {K}")
-    else:
-        print(f"[Info] Training on whole training set")
-
-    # prepare train and validation set
-    if i < K:
-        train_ds = merge_datasets([datasets[j] for j in range(K) if j != i])
-        valid_ds = datasets[i]
-    else:
-        train_ds = train_dataset
-        valid_ds = test_dataset
-    train_iter_kfold = DataIterator(train_ds, batch_size = 10, shuffle = True, cyclic = False)
-
-    # train
+try:
     for epoch in range(epoch_num):
-        for batch, [features, labels] in enumerate(train_iter_kfold):
+        train_loss = 0
+        train_r2 = 0
+
+        for batch, [features, labels] in enumerate(train_iter):
             prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable
             loss = loss_func(prediction, labels) # calculate loss and gradient (!)
 
             model.backward()
             optimizer.step()
 
-    # evaluate on validation/testing set
-    prediction = model(Variable(valid_ds.datas[0], derivable = True))
+            train_loss += loss
+            train_r2 += eval_regression_r2(prediction, labels)
+        
+        # record training loss and R2
+        train_loss /= len(train_dataset)
+        train_r2 /= len(train_dataset)
 
-    losses.append(loss_func(prediction, valid_ds.datas[1]))
-    accuracies.append(eval_binary_accuracy(prediction, valid_ds.datas[1]))
-    recalls.append(eval_binary_recall(prediction, valid_ds.datas[1]))
-    precisions.append(eval_binary_precision(prediction, valid_ds.datas[1]))
-    f1_scores.append(eval_binary_f1_score(prediction, valid_ds.datas[1]))
+        # record testing loss and R2
+        test_prediction = model(Variable(test_dataset.datas[0], derivable = True))
+        test_loss = loss_func(test_prediction, test_dataset.datas[1])
+        test_r2 = eval_regression_r2(test_prediction, test_dataset.datas[1])
+        
+        
+except KeyboardInterrupt:
+    clients.close()
 
-categories = ["Loss", "Accuracy", "Recall", "Precision", "F1 Score"]
-validation_results = [losses[:-1], accuracies[:-1], recalls[:-1], precisions[:-1], f1_scores[:-1]]
-averages = [np.mean(val) for val in validation_results]
-test_results = [losses[-1], accuracies[-1], recalls[-1], precisions[-1], f1_scores[-1]]
-
-bar_colors = ['#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF6820', '#544943']
-bar_width = 0.1
-bar_positions = np.arange(len(categories))
-
-plt.figure(figsize = (12, 6))
-for i in range(K):
-    plt.bar(bar_positions + i * bar_width, [val[i] for val in validation_results], width = bar_width, label = f'Validation Fold {i + 1}', color = bar_colors[i])
-plt.bar(bar_positions + K * bar_width, averages, width = bar_width, label = 'Validation Average', color = bar_colors[K])
-plt.bar(bar_positions + (K + 1) * bar_width, test_results, width = bar_width, label = 'Test', color = bar_colors[K + 1])
-
-plt.xlabel('Metrics')
-plt.ylabel('Values')
-plt.xticks(bar_positions + (K + 1) * bar_width / 2, categories)
-plt.legend()
-plt.show()
-
-
-
-# 数据集 -> 训练集 + 验证集
-# 超参搜索：
-#     重复搜索范围次：
-#         交叉验证：
-#             选取超参数
-#             重复 k 次：
-#                 训练集 -> 训练集 + 验证集
-#                 训练模型，得到该超参、该划分下模型的指标
-#                     [ HERE ]
-#             平均（或其他）各划分后模型的好坏（不交叉验证容易过拟合）
-#         得该超参下模型的好坏
-#     选取最好的超参
-
-# [ HERE ] 训练模型：
-#     初始化参数
-#     训练轮次（epoch）：
-#         优化器（取本轮所用数据，问模型要loss和gradient，去调模型的参数）
-
-
-
-# Project Description: Multilayer Perceptron (MLP) Implementation and Evaluation
-
-# 1. Develop a Multilayer Perceptron (MLP) Model Using NumPy:
-
-#     Create a Python program that leverages NumPy to implement an MLP capable of handling any number of layers and units per layer.
-#     Ensure that the program includes both the forward and backward propagation processes.
-#     Implement Mini-batch and Stochastic Gradient Descent Updates:
-
-#     Write code to update the model parameters using both mini-batch and stochastic gradient descent methods.
-#     Ensure that these updates are integrated into the training process of the MLP model.
-
-# 2. Cross-Validation Implementation:
-
-#     Develop code for k-fold cross-validation to assess the model's performance.
-#     This should allow for the evaluation of different hyperparameters and their impact on model accuracy.
-
-# 3. Nonlinear Function Approximation:
-
-#     Select a complex nonlinear function with a single input and a single output.
-#     Generate a dataset by adding noise to the function's output.
-#     Utilize the MLP model with various hyperparameters (number of layers, number of units per layer) to approximate the nonlinear function.
-#     Use k-fold cross-validation to determine which set of hyperparameters provides the best approximation.
-#     Demonstrate the results and discuss the findings.
-
-# 4. Classifier Performance Evaluation:
-
-#     Create a dataset similar to the one depicted on page 14 of the provided PPT of MLP lecture.
-#     Experiment with the MLP model using different hyperparameters (number of layers, number of units per layer) to classify the dataset.
-#     Validate the model's classification capabilities using k-fold cross-validation and identify the best performing configuration.
-#     Demonstrate the classification results and evaluate the model's performance using accuracy, recall, precision, and F1 score metrics.
-
-# 5. Submission Requirements:
-
-#     Ensure that your code is well-documented and follows good programming practices.
-#     Include a detailed report explaining your methodology, the results of your experiments, and your conclusions.
-#     The report should also include visualizations of the dataset, the model's performance, and any other relevant findings.

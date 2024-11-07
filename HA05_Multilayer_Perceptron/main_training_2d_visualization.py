@@ -13,7 +13,7 @@ from simple_ml.visualization.plot import TwoFeaturesClassificationModelVisualize
 
 
 """ Dataset """
-# data_np = generate_2d_classification_circle(N = 1000)
+data_np = generate_2d_classification_circle(N = 1000)
 # data_np = generate_2d_classification_exclusive_or(N = 1000)
 # data_np = generate_2d_classification_gaussians([
 #     ([4, 4], [[4, 0], [0, 4]], 200, 1),
@@ -21,53 +21,53 @@ from simple_ml.visualization.plot import TwoFeaturesClassificationModelVisualize
 #     ([-4, -4], [[4, 0], [0, 4]], 200, 1),
 #     ([4, -4], [[4, 0], [0, 4]], 200, -1)
 # ])
-data_np = np.array([
-    [-3.2, 4.5, 1],
-    [-2.6, 4.7, 1],
-    [0.1, 4.2, 1],
-    [0.3, 2.1, 1],
-    [2.2, 3.2, 1],
-    [4.6, 2.8, 1],
-    [3.8, 1.4, 1],
-    [4.9, 0.4, 1],
-    [0.2, -0.05, 1],
-    [1.8, -0.05, 1],
-    [-0.3, -3.2, 1],
-    [4, -1, 1],
-    [5.3, -0.9, 1],
-    [0.4, -2.95, 1],
-    [2.4, -3, 1],
-    [4.1, -3.1, 1],
-    [1.6, -5, 1],
-    [-0.4, 4.5, -1],
-    [-1.8, 3.1, -1],
-    [-3.2, 2, -1],
-    [-3.35, 0.45, -1],
-    [-2.1, 1.4, -1],
-    [-0.1, 1.4, -1],
-    [1.7, 2, -1],
-    [0.05, -1.8, -1],
-    [2.05, -1.6, -1],
-    [1, -4.2, -1],
-    [1.95, -3.3, -1],
-    [-1.75, -0.3, -1],
-    [-2.8, -0.38, -1],
-    [-2, -2.1, -1],
-    [-3.8, -2, -1]
-])
+# data_np = np.array([
+#     [-3.2, 4.5, 1],
+#     [-2.6, 4.7, 1],
+#     [0.1, 4.2, 1],
+#     [0.3, 2.1, 1],
+#     [2.2, 3.2, 1],
+#     [4.6, 2.8, 1],
+#     [3.8, 1.4, 1],
+#     [4.9, 0.4, 1],
+#     [0.2, -0.05, 1],
+#     [1.8, -0.05, 1],
+#     [-0.3, -3.2, 1],
+#     [4, -1, 1],
+#     [5.3, -0.9, 1],
+#     [0.4, -2.95, 1],
+#     [2.4, -3, 1],
+#     [4.1, -3.1, 1],
+#     [1.6, -5, 1],
+#     [-0.4, 4.5, -1],
+#     [-1.8, 3.1, -1],
+#     [-3.2, 2, -1],
+#     [-3.35, 0.45, -1],
+#     [-2.1, 1.4, -1],
+#     [-0.1, 1.4, -1],
+#     [1.7, 2, -1],
+#     [0.05, -1.8, -1],
+#     [2.05, -1.6, -1],
+#     [1, -4.2, -1],
+#     [1.95, -3.3, -1],
+#     [-1.75, -0.3, -1],
+#     [-2.8, -0.38, -1],
+#     [-2, -2.1, -1],
+#     [-3.8, -2, -1]
+# ])
 
 dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0)
 
 
 """ Model """
-# model = Sequential([
-#     Linear(2, 4),
-#     Sigmoid(),
-#     Linear(4, 2),
-#     Sigmoid(),
-#     Linear(2, 1)
-# ])
+model = Sequential([
+    Linear(2, 4),
+    Sigmoid(),
+    Linear(4, 2),
+    Sigmoid(),
+    Linear(2, 1)
+])
 
 # model = Sequential([
 #     Linear(2, 8),
@@ -81,11 +81,11 @@ train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0)
 #     Linear(8, 1)
 # ])
 
-model = Sequential([
-    Linear(2, 20),
-    Tanh(),
-    Linear(20, 1)
-])
+# model = Sequential([
+#     Linear(2, 20),
+#     Tanh(),
+#     Linear(20, 1)
+# ])
 
 loss_func = MSELoss()
 # loss_func = CrossEntropyLoss() # the output of the model should be in (0, 1), i.e. Sigmoid
@@ -139,7 +139,7 @@ for epoch in range(epoch_num):
     test_accuracy_history.append(test_accuracy)
 
     # update the plot
-    if epoch % 50 == 0:
+    if epoch % 1 == 0:
         visualizer.update(epoch, train_loss_history, train_accuracy_history, test_loss_history, test_accuracy_history)
 
 plt.show()

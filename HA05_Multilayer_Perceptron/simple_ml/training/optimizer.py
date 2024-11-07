@@ -29,7 +29,7 @@ class GD(Optimizer):
             param.value -= self.lr * param.gradient
 
 
-class MomentumGD(Optimizer):
+class MomentumGD(Optimizer): # TODO: to be checked
     """
         Gradient Descent Optimizer with Momentum
     """

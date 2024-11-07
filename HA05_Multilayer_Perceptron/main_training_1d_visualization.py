@@ -15,8 +15,6 @@ from simple_ml.visualization.plot import OneFeatureRegressionModelVisualizer
 """ Dataset """
 def example_func(x):
     return np.cos(x) + np.exp(-x ** 2) + x ** 3 / 233
-    # return np.sin(x) + np.cos(2 * x) + np.exp(-x ** 2) + x ** 3 / 233
-    # return x ** 3 - x ** 2 + 2 * x + 1
 
 data_np = generate_1d_regression_with_function(N = 1000, f = example_func, x_range = (-10, 10), noise = 0.2)
 
@@ -25,28 +23,6 @@ train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
 
 
 """ Model """
-# model = Sequential([
-#     Linear(1, 2),
-#     ReLU(),
-#     Linear(2, 1)
-# ])
-
-# model = Sequential([
-#     Linear(1, 4),
-#     Sigmoid(),
-#     Linear(4, 8),
-#     Sigmoid(),
-#     Linear(8, 16),
-#     Sigmoid(),
-#     Linear(16, 32),
-#     Sigmoid(),
-#     Linear(32, 16),
-#     Sigmoid(),
-#     Linear(16, 8),
-#     Sigmoid(),
-#     Linear(8, 1)
-# ])
-
 model = Sequential([
     Linear(1, 5),
     Sigmoid(),
@@ -83,7 +59,6 @@ for epoch in range(epoch_num):
         loss = loss_func(prediction, labels) # calculate loss and gradient (!)
 
         model.backward()
-
         optimizer.step()
 
         train_loss += loss
