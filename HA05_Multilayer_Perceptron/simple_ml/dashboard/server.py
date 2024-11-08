@@ -5,7 +5,7 @@
 from sanic import Sanic, response
 from sanic import HTTPResponse, Request, Websocket
 
-from .vc import ViewClientsPool
+from .clients import ClientsPool
 from .core import DashboardCore
 
 
@@ -16,8 +16,8 @@ APP_PORT = 2333
 
 app = Sanic(APP_NAME)
 
-clients = ViewClientsPool()
-core = DashboardCore(clients)
+clients = ClientsPool()
+core = DashboardCore(app, clients)
 
 
 """ CORS Middleware """
@@ -52,15 +52,7 @@ def index(request: Request):
 
 @app.websocket('/notify') # new client
 async def notify(request: Request, ws: Websocket):
-    task_id = request.args.get('task_id', None)
-    view_id = request.args.get('view_id', None)
-    if task_id is None or view_id is None:
-        return response.json({
-            'status': 'error',
-            'message': 'task_id and view_id are required.'
-        })
-    
-    clients.add(ws, task_id, view_id)
+    clients.add(ws)
     
     try:
         async for msg in ws: # TODO: 异步监听？
@@ -75,8 +67,8 @@ def api_get_state(request: Request):
         'state': core.get_state()
     })
 
-@app.post('/api/launch_task')
-def api_launch_task(request: Request):
+@app.post('/api/launch')
+def api_launch(request: Request):
     data = request.json
 
     for key in ['model', 'loss', 'dataset', 'optimizer']:
@@ -96,6 +88,30 @@ def api_launch_task(request: Request):
             'status': 'error',
             'message': 'Failed to launch task.'
         })
+
+@app.get('/api/stop')
+def api_stop(request: Request):
+    core.stop_task()
+    return response.json({
+        'status': 'ok',
+        'state': core.get_state()
+    })
+
+@app.get('/api/pause')
+def api_pause(request: Request):
+    core.pause_task()
+    return response.json({
+        'status': 'ok',
+        'state': core.get_state()
+    })
+
+@app.get('/api/resume')
+def api_resume(request: Request):
+    core.resume_task()
+    return response.json({
+        'status': 'ok',
+        'state': core.get_state()
+    })
 
 
 """ Main """

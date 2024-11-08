@@ -1,8 +1,12 @@
+import os
 import time
 import json
 import threading
 
 import numpy as np
+
+import asyncio
+from sanic import Sanic
 
 from .. import Variable, Dataset, DataIterator, split_train_and_test_dataset
 from ..data.samples import label_split_for_2d_classification_dataset, generate_2d_classification_circle, generate_1d_regression_with_function
@@ -12,14 +16,14 @@ from ..model.layers import Linear, ReLU, Sigmoid, Tanh
 from ..training.loss import MSELoss, CrossEntropyLoss
 from ..training.optimizer import GD, MomentumGD, Adam
 
-from .vc import ViewID, ViewClientsPool
+from .clients import ClientsPool
 
 
 
 class Task:
-    def __init__(self, task_id, vc_pool, components: dict):
+    def __init__(self, task_id, pool, components: dict):
         self.task_id = task_id
-        self.vc_pool: ViewClientsPool = vc_pool
+        self.pool: ClientsPool = pool
 
         # TODO: assert
         self.train_dataset = components.get('train_dataset', None)
@@ -31,6 +35,10 @@ class Task:
         self.is_stopped = threading.Event() # False
         self.is_resumed = threading.Event()
         self.is_resumed.set() # True
+
+        self.is_updated = threading.Event() # False
+        self.update_msg = None
+        self.update_msg_lock = threading.Lock()
 
         self.epoch = 0
     
@@ -46,7 +54,7 @@ class Task:
     def reset(self):
         pass # TODO: reset epoch, model weights, etc.
 
-    async def run(self): # TODO: now only for 2d classification
+    def run(self): # TODO: now only for 2d classification
         train_iter = DataIterator(self.train_dataset, batch_size = 32, shuffle = True, cyclic = False)
 
         train_loss_buffer = []
@@ -60,7 +68,7 @@ class Task:
 
             for batch, [features, labels] in enumerate(train_iter):
                 prediction = self.model(Variable(features, derivable = True)) # must be wrapped by Variable
-                loss = self.loss_func(prediction, labels) # calculate loss and gradient (!)
+                loss = self.loss(prediction, labels) # calculate loss and gradient (!)
 
                 self.model.backward()
                 self.optimizer.step()
@@ -72,64 +80,66 @@ class Task:
             train_loss /= len(self.train_dataset)
             train_accuracy /= len(self.train_dataset)
             train_loss_buffer.append(train_loss)
-            # train_accuracy_history.append(train_accuracy)
+            # train_accuracy_buffer.append(train_accuracy)
 
             # record testing loss and accuracy
             test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
-            test_loss = self.loss_func(test_prediction, self.test_dataset.datas[1])
+            test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
             test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
-            # test_loss_history.append(test_loss)
-            # test_accuracy_history.append(test_accuracy)
+            # test_loss_buffer.append(test_loss)
+            # test_accuracy_buffer.append(test_accuracy)
 
-            """ Inform the dashboard views """
-            with self.vc_pool.lock:
-                for vc in self.vc_pool.clients:
-                    if vc.task_id == self.task_id:
-                        if vc.view_id == ViewID.EPOCH:
-                            msg = json.dumps({
-                                'epoch': self.epoch
-                            })
-                        elif vc.view_id == ViewID.TRAIN_LOSS:
-                            msg = json.dumps({
-                                'train_loss': train_loss_buffer
-                            })
-                            train_loss_buffer.clear()
-                        
-                        try:
-                            await client.send(msg)
-                        except Exception as e:
-                            # print(f"Failed to send message to a client: {e}")
-                            print(f"Deprecated client removed.")
-                            self.vc_pool.remove(client) # TODO
-            """ Inform the dashboard views """
+            # prepare to broadcast
+            msg = json.dumps({
+                'epoch': self.epoch,
+                'train_loss_buffer': train_loss_buffer,
+            })
+            with self.update_msg_lock:
+                self.update_msg = msg
+                self.is_updated.set()
 
             # next epoch
             self.epoch += 1
+    
+    async def async_forwarding_task(self):
+        while not self.is_stopped.is_set():
+            if self.is_updated.is_set(): # don't use .wait() here, which will block the event loop
+                self.is_updated.clear()
+                with self.update_msg_lock:
+                    msg = self.update_msg
+                await self.pool.broadcast(msg)
+            await asyncio.sleep(0.02)
 
 
 class DashboardCore:
-    def __init__(self, vc_pool):
-        self.vc_pool = vc_pool
+    def __init__(self, app, pool):
+        self.app: Sanic = app
+        self.pool = pool
         
         self.task = None
     
     def get_state(self):
+        if self.task is None:
+            state = 'stopped'
+        else:
+            if self.task.is_stopped.is_set():
+                state = 'stopped'
+            elif self.task.is_resumed.is_set():
+                state = 'running'
+            else:
+                state = 'paused'
         return {
+            'state': state,
             'task_id': self.task.task_id if self.task is not None else None
         }
     
     def launch_task(self, conf):
+        # TODO: stop previous task (currently only one task is allowed)
+        if self.task is not None:
+            self.stop_task()
+
         """
         {
-            'model': [
-                {'type': 'Linear', 'params': {...: ...}},
-                {'type': 'Sigmoid'},
-                ...
-            ],
-            'loss': {
-                'type': 'MSELoss',
-                'params': {...: ...}
-            },
             'dataset': {
                 'type': 'builtin',
                 'name': '<function_name>',
@@ -147,6 +157,15 @@ class DashboardCore:
             #         ...
             #     ]
             # },
+            'model': [
+                {'type': 'Linear', 'params': {...: ...}},
+                {'type': 'Sigmoid'},
+                ...
+            ],
+            'loss': {
+                'type': 'MSELoss',
+                'params': {...: ...}
+            },
             'optimizer': {
                 'type': 'GD',
                 'params': {...: ...}
@@ -179,8 +198,8 @@ class DashboardCore:
 
         # launch task
         self.task = Task(
-            task_id = 'task_id',
-            vc_pool = self.vc_pool,
+            task_id = os.urandom(16).hex(), # TODO: collision
+            pool = self.pool,
             components = {
                 'train_dataset': train_dataset,
                 'test_dataset': test_dataset,
@@ -191,6 +210,23 @@ class DashboardCore:
         )
         task_thread = threading.Thread(target = self.task.run)
         task_thread.start()
+        self.app.add_task(self.task.async_forwarding_task())
 
         return True
+
+    def stop_task(self):
+        if self.task is not None:
+            self.task.stop()
+            self.task = None
+        return True # TODO
+
+    def pause_task(self):
+        if self.task is not None:
+            self.task.pause()
+        return True # TODO
+    
+    def resume_task(self):
+        if self.task is not None:
+            self.task.resume()
+        return True # TODO
 
