@@ -57,6 +57,11 @@ class DataIterator:
 
         if shuffle:
             random.shuffle(self.indices)
+    
+    def reset(self):
+        self.next_idx = self.batch_size
+        if self.shuffle:
+            random.shuffle(self.indices)
 
     def __iter__(self):
         return self
@@ -64,10 +69,8 @@ class DataIterator:
     def __next__(self):
         exceed = self.next_idx - len(self.dataset)
         if exceed >= 0:
-            if exceed >= self.batch_size: # totally exceeded
-                self.next_idx = self.batch_size
-                if self.shuffle:
-                    random.shuffle(self.indices)
+            if exceed >= self.batch_size: # did not cycle to the beginning and exceed (StopIteration)
+                self.reset()
                 raise StopIteration
             batch_indices = self.indices[(self.next_idx - self.batch_size):] # collect left samples
             if self.cyclic: # cyclic, complete the batch

@@ -1,29 +1,20 @@
 <template>
     <div class="dashboard">
-
+        <TwoFeaturesClassificationModelOutputChart />
     </div>
 </template>
 
 <script>
-import axios from 'axios';
-import global_config from "@/config.js";
+import TwoFeaturesClassificationModelOutputChart from '../components/TwoFeaturesClassificationModelOutputChart.vue';
+
+// import axios from 'axios';
+// import global_config from "@/config.js";
 
 export default {
     components: {
-
+        TwoFeaturesClassificationModelOutputChart
     },
-    data() {
-        return {
-
-        };
-    },
-    computed: {
-
-    },
-    async mounted() {
-
-    },
-    beforeDestroy() {
+    mounted() {
 
     },
     methods: {
@@ -35,8 +26,8 @@ export default {
 <style>
 .dashboard {
     display: flex;
-    justify-content: center;
-    margin-top: 2rem;
-    padding: 0 1rem;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
 }
 </style>

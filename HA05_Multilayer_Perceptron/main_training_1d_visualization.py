@@ -13,10 +13,7 @@ from simple_ml.visualization.plot import OneFeatureRegressionModelVisualizer
 
 
 """ Dataset """
-def example_func(x):
-    return np.cos(x) + np.exp(-x ** 2) + x ** 3 / 233
-
-data_np = generate_1d_regression_with_function(N = 1000, f = example_func, x_range = (-10, 10), noise = 0.2)
+data_np = generate_1d_regression_with_function(N = 1000, f = lambda x: np.cos(x) + np.exp(-x ** 2) + x ** 3 / 233, x_range = (-10, 10), noise = 0.2)
 
 dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
