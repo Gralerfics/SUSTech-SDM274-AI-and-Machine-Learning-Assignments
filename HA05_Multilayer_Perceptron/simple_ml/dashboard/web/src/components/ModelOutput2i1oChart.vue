@@ -11,6 +11,14 @@ export default {
             type: Object,
             required: true
         },
+        train_dataset: {
+            type: Object,
+            required: true
+        },
+        test_dataset: {
+            type: Object,
+            required: true
+        },
         width: {
             type: Number,
             default: 500
@@ -26,9 +34,12 @@ export default {
         }
     },
     mounted() {
-        // this.$options.sockets.onopen = () => {
-        //     this.$socket.send
-        // }
+        this.$options.sockets.onopen = () => {
+            this.$socket.send(JSON.stringify({
+                type: 'poll',
+                prop_names: ['train_dataset', 'test_dataset']
+            }));
+        }
 
         this.drawChart(this.model_output);
     },

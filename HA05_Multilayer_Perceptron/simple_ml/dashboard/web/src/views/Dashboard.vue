@@ -8,6 +8,8 @@
 
         <ModelOutput2i1oChart
             :model_output="viewDatabase.model_output"
+            :train_dataset="viewDatabase.train_dataset"
+            :test_dataset="viewDatabase.test_dataset"
             :width="500"
             :height="500"
         />
@@ -70,7 +72,8 @@ export default {
         this.pollInterval = setInterval(() => {
             if (this.isWebsocketConnected) {
                 this.$socket.send(JSON.stringify({
-                    type: 'poll'
+                    type: 'poll',
+                    prop_names: ['epoch', 'model_output', 'train_loss_buffer', 'train_accuracy_buffer'],
                 }));
             }
         }, 1000 / 10);

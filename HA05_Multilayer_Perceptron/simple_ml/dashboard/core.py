@@ -103,9 +103,6 @@ class DashboardCore:
     def reset(self):
         self.stop()
         self.resume()
-        
-        # TODO: reset, perhaps broadcast an empty update to the whole pool
-        self.update_msg_buffer({ key: None for key in self.get_msg_buffer().keys() })
     
     def run(self): # TODO: now only for 2d classification
         train_iter = DataIterator(self.train_dataset, batch_size = 32, shuffle = True, cyclic = False)
@@ -198,6 +195,9 @@ class DashboardCore:
         self.optimizer = None
         
         self.epoch = 0
+
+        # clear frontend view database
+        self.update_msg_buffer({ key: None for key in self.get_msg_buffer().keys() })
     
     async def async_ws_listener(self, ws):
         try:

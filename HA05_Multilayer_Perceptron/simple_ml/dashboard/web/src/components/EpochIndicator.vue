@@ -14,13 +14,8 @@ export default {
     },
     computed: {
         formattedEpoch() {
-            const epoch_num = (this.isValidData(this.epoch)) ? this.epoch : 0;
+            const epoch_num = (this.epoch !== null && this.epoch !== undefined) ? this.epoch : 0;
             return epoch_num.toString().padStart(6, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        }
-    },
-    methods: {
-        isValidData(data) {
-            return (data !== null && data !== undefined);
         }
     }
 };
