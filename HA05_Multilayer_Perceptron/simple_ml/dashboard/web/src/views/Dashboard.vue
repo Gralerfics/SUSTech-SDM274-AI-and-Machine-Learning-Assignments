@@ -8,9 +8,11 @@
 <script>
 import EpochIndicator from "@/components/EpochIndicator.vue";
 import ControlButtons from "@/components/ControlButtons.vue";
+import { RouterView } from "vue-router";
 
 export default {
     components: {
+        RouterView,
         EpochIndicator,
         ControlButtons
     },
