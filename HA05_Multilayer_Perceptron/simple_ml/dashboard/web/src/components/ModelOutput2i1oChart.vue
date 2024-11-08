@@ -22,10 +22,8 @@ export default {
     },
     watch: {
         model_output(newData) {
-            console.log('hahahai');
             this.drawChart(newData);
-        },
-        deep: true
+        }
     },
     mounted() {
         this.drawChart(this.model_output);
@@ -87,12 +85,17 @@ export default {
             const gridData = data.data;
 
             // colormap
-            const npp_cn = "rgb(237, 153, 65)";
-            const npp_cm = "rgb(233, 233, 233)";
-            const npp_cp = "rgb(39, 122, 185)";
-            const colorScale = d3.scaleLinear()
-                .domain([output_range[0], 0, output_range[1]])
-                .range([npp_cn, npp_cm, npp_cp]);
+            const quantizedColorNumber = 50;
+            let tmpScale = d3.scaleLinear()
+                .domain([0, .5, 1])
+                .range(["#f59322", "#e8eaeb", "#0877bd"])
+                .clamp(true);
+            let colors = d3.range(0, 1 + 1e-9, 1 / quantizedColorNumber).map(a => {
+                return tmpScale(a);
+            });
+            const colorScale = d3.scaleQuantize()
+                .domain([output_range[0], output_range[1]])
+                .range(colors);
 
             // mesh grids
             gridData.forEach((row, i) => {

@@ -16,124 +16,6 @@ from ..model.layers import Linear, ReLU, Sigmoid, Tanh
 from ..training.loss import MSELoss, CrossEntropyLoss
 from ..training.optimizer import GD, MomentumGD, Adam
 
-from .clients import ClientsPool
-
-
-
-class Task:
-    def __init__(self, task_id, pool, components: dict):
-        self.task_id = task_id
-        self.pool: ClientsPool = pool
-
-        # TODO: assert
-        self.train_dataset = components.get('train_dataset', None)
-        self.test_dataset = components.get('test_dataset', None)
-        self.model = components.get('model', None)
-        self.loss = components.get('loss', None)
-        self.optimizer = components.get('optimizer', None)
-    
-        self.is_stopped = threading.Event() # False
-        self.is_resumed = threading.Event()
-        self.is_resumed.set() # True
-
-        # self.is_updated = threading.Event() # False
-        self.msg_buffer = {}
-        self.msg_buffer_lock = threading.Lock()
-
-        self.epoch = 0
-    
-    def update_msg_buffer(self, msg: dict):
-        with self.msg_buffer_lock:
-            self.msg_buffer.update(msg)
-    
-    def get_msg_buffer(self):
-        with self.msg_buffer_lock:
-            return self.msg_buffer.copy()
-    
-    def stop(self):
-        self.is_stopped.set() # True
-    
-    def pause(self):
-        self.is_resumed.clear() # False
-    
-    def resume(self):
-        self.is_resumed.set() # True
-    
-    def reset(self):
-        pass # TODO: reset epoch, model weights, etc.
-
-    def run(self): # TODO: now only for 2d classification
-        train_iter = DataIterator(self.train_dataset, batch_size = 32, shuffle = True, cyclic = False)
-
-        train_loss_buffer = []
-        train_accuracy_buffer = []
-
-        # for model output visualization (temporary) TODO
-        x1_range = (-6, 6, 50)
-        x2_range = (-6, 6, 50)
-        x1, x2 = np.meshgrid(np.linspace(*x1_range), np.linspace(*x2_range))
-        model_output_features = Variable(np.c_[x1.ravel(), x2.ravel()])
-
-        while not self.is_stopped.is_set(): # run if is_stopped = False
-            # block until is_resumed = True
-            self.is_resumed.wait()
-
-            train_loss = 0
-            train_accuracy = 0
-
-            for batch, [features, labels] in enumerate(train_iter):
-                prediction = self.model(Variable(features, derivable = True)) # must be wrapped by Variable
-                loss = self.loss(prediction, labels) # calculate loss and gradient (!)
-
-                self.model.backward()
-                self.optimizer.step()
-
-                train_loss += loss * features.shape[0]
-                train_accuracy += eval_binary_accuracy(prediction, labels) * features.shape[0]
-            
-            # record training loss and accuracy
-            train_loss /= len(self.train_dataset)
-            train_accuracy /= len(self.train_dataset)
-            train_loss_buffer.append(train_loss)
-            train_accuracy_buffer.append(train_accuracy)
-
-            # record testing loss and accuracy
-            # test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
-            # test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
-            # test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
-            # test_loss_buffer.append(test_loss)
-            # test_accuracy_buffer.append(test_accuracy)
-
-            # message preparation
-            self.update_msg_buffer({
-                'epoch': self.epoch,
-                'train_loss_buffer': train_loss_buffer,
-                'train_accuracy_buffer': train_accuracy_buffer,
-                'model_output': {
-                    'type': '2i1o',
-                    'in': [
-                        {'name': 'x_1', 'range': x1_range},
-                        {'name': 'x_2', 'range': x2_range}
-                    ],
-                    'out': [
-                        {'name': 'output', 'range': (-1, 1)}
-                    ],
-                    'data': self.model(model_output_features).value.reshape(x1.shape).tolist()
-                },
-            })
-
-            # next epoch
-            self.epoch += 1
-    
-    # async def async_forwarding_task(self):
-    #     while not self.is_stopped.is_set():
-    #         if self.is_updated.is_set(): # don't use .wait() here, which will block the event loop
-    #             self.is_updated.clear()
-    #             with self.msg_buffer_lock:
-    #                 msg = self.msg_buffer
-    #             await self.pool.broadcast(msg)
-    #         await asyncio.sleep(0.02)
-
 
 class DashboardCore:
     def __init__(self, pool):
@@ -233,8 +115,8 @@ class DashboardCore:
         test_accuracy_buffer = []
 
         # for model output visualization (temporary) TODO
-        x1_range = (-6, 6, 50)
-        x2_range = (-6, 6, 50)
+        x1_range = (-6, 6, 60)
+        x2_range = (-6, 6, 60)
         x1, x2 = np.meshgrid(np.linspace(*x1_range), np.linspace(*x2_range))
         model_output_features = Variable(np.c_[x1.ravel(), x2.ravel()])
 
@@ -306,7 +188,6 @@ class DashboardCore:
 
             # next epoch
             self.epoch += 1
-            # print(self.epoch)
 
         # destroy the task
         self.train_dataset = None
@@ -326,28 +207,26 @@ class DashboardCore:
                 """
                 {
                     'type': 'poll',
-                    'prop_name': '<...>.<...>...<...>',
+                    'prop_names': ['...', ...] (list of views) or not provided (root)
                 }
                 """
                 if data['type'] == 'poll':
-                    # print(f"[Info] a client polled: {data['prop_name']}")
-                    if 'prop_name' not in data.keys():
-                        continue # invalid cmd, do not respond, TODO
-
-                    prop_value = self.get_msg_buffer()
-                    prop_names = data['prop_name'].split('.')[1:]
-                    for prop_name in prop_names:
-                        prop_value = prop_value.get(prop_name, None)
-                        if prop_value is None:
-                            break
-                    # print(f"[Info] response: {prop_value}")
+                    if 'prop_names' not in data.keys():
+                        # root
+                        prop_values = self.get_msg_buffer()
+                    else:
+                        # list or str
+                        prop_names = data['prop_names']
+                        if isinstance(prop_names, str):
+                            prop_names = [prop_names]
+                        prop_values = {prop_name: self.get_msg_buffer().get(prop_name, None) for prop_name in prop_names}
+                    
                     await ws.send(json.dumps({
                         'type': 'poll_response',
-                        'prop_name': data['prop_name'],
-                        'prop_value': prop_value # if not found, None
+                        'prop_values': prop_values
                     }))
                 else:
-                    continue # invalid cmd, do not respond, TODO
+                    continue # unknown cmd, do not respond, TODO
 
         except Exception as e:
             print(f'WebSocket error: {e}')

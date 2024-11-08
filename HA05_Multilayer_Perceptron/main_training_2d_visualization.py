@@ -76,7 +76,7 @@ visualizer = TwoFeaturesClassificationModelVisualizer(model, train_dataset, test
 
 for epoch in range(epoch_num):
     train_loss = 0
-    train_accuracy = 0 # TODO: ！！！！！！！！数字好像不太对，有点低
+    train_accuracy = 0
 
     for batch, [features, labels] in enumerate(train_iter):
         prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable
@@ -85,8 +85,8 @@ for epoch in range(epoch_num):
         model.backward()
         optimizer.step()
 
-        train_loss += loss
-        train_accuracy += eval_binary_accuracy(prediction, labels)
+        train_loss += loss * features.shape[0]
+        train_accuracy += eval_binary_accuracy(prediction, labels) * features.shape[0]
     
     # record training loss and accuracy
     train_loss /= len(train_dataset)

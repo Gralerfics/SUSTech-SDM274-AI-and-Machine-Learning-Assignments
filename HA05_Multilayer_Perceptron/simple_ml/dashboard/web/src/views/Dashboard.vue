@@ -53,9 +53,8 @@ export default {
         this.$options.sockets.onmessage = (msg) => {
             const data = JSON.parse(msg.data);
             if (data.type === 'poll_response') {
-                if (data.prop_name !== undefined && data.prop_value !== undefined) {
-                    this.updateViewDatabaseEntry(data.prop_name, data.prop_value);
-                    // this.viewDatabase.model_output = data.prop_value;
+                if (data.prop_values !== undefined) {
+                    Object.assign(this.viewDatabase, data.prop_values);
                 }
             }
         }
@@ -71,8 +70,7 @@ export default {
         this.pollInterval = setInterval(() => {
             if (this.isWebsocketConnected) {
                 this.$socket.send(JSON.stringify({ // TODO: sendObj
-                    type: 'poll',
-                    prop_name: ''
+                    type: 'poll'
                 }));
             }
         }, 1000 / 10);
