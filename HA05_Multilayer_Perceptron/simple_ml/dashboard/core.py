@@ -60,6 +60,12 @@ class Task:
         train_loss_buffer = []
         train_accuracy_buffer = []
 
+        # for model output visualization (temporary) TODO
+        x1_range = (-6, 6, 50)
+        x2_range = (-6, 6, 50)
+        x1, x2 = np.meshgrid(np.linspace(*x1_range), np.linspace(*x2_range))
+        model_output_features = Variable(np.c_[x1.ravel(), x2.ravel()])
+
         while not self.is_stopped.is_set(): # run if is_stopped = False
             # block until is_resumed = True
             self.is_resumed.wait()
@@ -74,8 +80,8 @@ class Task:
                 self.model.backward()
                 self.optimizer.step()
 
-                train_loss += loss
-                train_accuracy += eval_binary_accuracy(prediction, labels)
+                train_loss += loss * features.shape[0]
+                train_accuracy += eval_binary_accuracy(prediction, labels) * features.shape[0]
             
             # record training loss and accuracy
             train_loss /= len(self.train_dataset)
@@ -90,11 +96,22 @@ class Task:
             # test_loss_buffer.append(test_loss)
             # test_accuracy_buffer.append(test_accuracy)
 
-            # prepare to broadcast
+            # broadcast
             msg = json.dumps({
                 'epoch': self.epoch,
                 'train_loss_buffer': train_loss_buffer,
-                'train_accuracy_buffer': train_accuracy_buffer
+                'train_accuracy_buffer': train_accuracy_buffer,
+                'model_output': {
+                    'type': '2i1o',
+                    'in': [
+                        {'name': 'x_1', 'range': x1_range},
+                        {'name': 'x_2', 'range': x2_range}
+                    ],
+                    'out': [
+                        {'name': 'output', 'range': (-1, 1)}
+                    ],
+                    'data': self.model(model_output_features).value.reshape(x1.shape).tolist()
+                },
             })
             with self.update_msg_lock:
                 self.update_msg = msg

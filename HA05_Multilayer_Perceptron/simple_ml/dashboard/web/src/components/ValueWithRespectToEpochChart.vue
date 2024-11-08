@@ -19,6 +19,10 @@ export default {
             type: Number,
             default: 300
         },
+        yAxisDomain: {
+            type: Array,
+            default: [null, null]
+        },
         yAxisLabel: {
             type: String,
             default: "Loss"
@@ -40,13 +44,13 @@ export default {
             const width = this.width;
             const height = this.height;
 
-            // axes
+            // scale
             const x = d3.scaleLinear()
                 .domain([0, data.length - 1])
                 .range([60, width - 50]);
 
             const y = d3.scaleLinear()
-                .domain([0, d3.max(data)])
+                .domain([(this.yAxisDomain[0] === null) ? d3.min(data) : this.yAxisDomain[0], (this.yAxisDomain[1] === null) ? d3.max(data) : this.yAxisDomain[1]])
                 .range([height - 45, 20]);
 
             // line generator
@@ -63,7 +67,7 @@ export default {
                 .attr("d", line);
 
             // dynamic x ticks
-            const xTicks = Math.min(data.length / 5, 20);
+            const xTicks = Math.min(data.length / 5, 10);
             const xAxis = d3.axisBottom(x).ticks(xTicks);
             svg.append("g")
                 .attr("transform", `translate(0, ${height - 45})`)
