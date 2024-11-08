@@ -14,7 +14,7 @@ const route = useRoute();
 
     <div v-if="!isWebsocketConnected" class="overlay">
         <div class="overlay-panel">
-            Connecting ...
+            Connection lost ...
         </div>
     </div>
 </template>

@@ -1,17 +1,19 @@
 <template>
     <div class="dashboard">
-        <EpochIndicator :epoch="epoch" />
+        <EpochIndicator
+            :epoch="viewDatabase.epoch"
+        />
 
-        <ControlButtons @reset="handleReset" />
+        <ControlButtons />
 
         <ModelOutput2i1oChart
-            :model_output="model_output"
+            :model_output="viewDatabase.model_output"
             :width="500"
             :height="500"
         />
 
         <ValueWithRespectToEpochChart
-            :values="train_loss_buffer"
+            :values="viewDatabase.train_loss_buffer"
             :width="600"
             :height="200"
             :yAxisDomain="[0, null]"
@@ -19,7 +21,7 @@
         />
 
         <ValueWithRespectToEpochChart
-            :values="train_accuracy_buffer"
+            :values="viewDatabase.train_accuracy_buffer"
             :width="600"
             :height="200"
             :yAxisDomain="[0, 1]"
@@ -43,39 +45,92 @@ export default {
     },
     data() {
         return {
-            epoch: 0,
-            train_loss_buffer: [],
-            train_accuracy_buffer: [],
-            model_output: {}
-            // TODO
+            isWebsocketConnected: false,
+            viewDatabase: {} // 各组件应有 isValidData 和 drawChart 方法，若数据不合法（null/undefined 等）则应绘制空白图（例如以赋特定值的方式）
         }
     },
     mounted() {
         this.$options.sockets.onmessage = (msg) => {
             const data = JSON.parse(msg.data);
-            // TODO: type validation
-            if (data.epoch !== undefined && data.model_output !== null) {
-                this.epoch = data.epoch;
+            if (data.type === 'poll_response') {
+                if (data.prop_name !== undefined && data.prop_value !== undefined) {
+                    this.updateViewDatabaseEntry(data.prop_name, data.prop_value);
+                    // this.viewDatabase.model_output = data.prop_value;
+                }
             }
-            if (data.train_loss_buffer !== undefined && data.model_output !== null) {
-                this.train_loss_buffer = data.train_loss_buffer;
+        }
+
+        this.$options.sockets.onopen = () => {
+            this.isWebsocketConnected = true;
+        }
+
+        this.$options.sockets.onclose = () => {
+            this.isWebsocketConnected = false;
+        }
+
+        this.pollInterval = setInterval(() => {
+            if (this.isWebsocketConnected) {
+                this.$socket.send(JSON.stringify({ // TODO: sendObj
+                    type: 'poll',
+                    prop_name: ''
+                }));
             }
-            if (data.train_accuracy_buffer !== undefined && data.model_output !== null) {
-                this.train_accuracy_buffer = data.train_accuracy_buffer;
-            }
-            if (data.model_output !== undefined && data.model_output !== null) {
-                this.model_output = data.model_output;
-            }
-            // TODO
+        }, 1000 / 10);
+    },
+    beforeUnmount() {
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
         }
     },
     methods: {
-        handleReset() {
-            this.epoch = 0;
-            this.train_loss_buffer = [];
-            this.train_accuracy_buffer = [];
-            this.model_output = {};
-            // TODO
+        recursivelyMerge(target, source) {
+            for (const key in source) {
+                if (
+                    key in target &&
+                    source[key].constructor === Object &&
+                    target[key].constructor === Object
+                ) {
+                    this.recursivelyMerge(target[key], source[key]);
+                } else {
+                    target[key] = source[key];
+                }
+            }
+            return target;
+        },
+        getViewDatabaseEntry(propName) {
+            const keys = propName.split(".").slice(1);
+            let current = this.viewDatabase;
+
+            for (const key of keys) {
+                if (current[key] === undefined) {
+                    return undefined;
+                }
+                current = current[key];
+            }
+
+            return current;
+        },
+        updateViewDatabaseEntry(propName, propValue) {
+            const path = propName.split('.').slice(1);
+
+            let current = this.viewDatabase;
+
+            for (let i = 0; i < path.length; i ++) {
+                const key = path[i];
+
+                if (i === path.length - 1 && propValue.constructor !== Object) {
+                    current[key] = propValue;
+                } else {
+                    if (!current[key]) {
+                        current[key] = {};
+                    }
+                    current = current[key];
+                }
+            }
+
+            if (propValue.constructor === Object) {
+                this.recursivelyMerge(current, propValue);
+            }
         }
     }
 };

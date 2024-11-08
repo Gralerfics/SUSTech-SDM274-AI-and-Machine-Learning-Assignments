@@ -22,20 +22,13 @@ export default {
     },
     watch: {
         model_output(newData) {
-            if (this.isValidData(newData)) {
-                this.drawChart(newData);
-            } else {
-                this.clearChart();
-                console.warn("Invalid model_output data");
-            }
-        }
+            console.log('hahahai');
+            this.drawChart(newData);
+        },
+        deep: true
     },
     mounted() {
-        if (this.isValidData(this.model_output)) {
-            this.drawChart(this.model_output);
-        } else {
-            console.warn("Invalid model_output data on mount");
-        }
+        this.drawChart(this.model_output);
     },
     methods: {
         isValidData(data) {
@@ -56,6 +49,20 @@ export default {
             );
         },
         drawChart(data) {
+            if (!this.isValidData(data)) {
+                data = {
+                    type: '2i1o',
+                    in: [
+                        { name: 'Feature 1', range: [0, 1, 1] },
+                        { name: 'Feature 2', range: [0, 1, 1] }
+                    ],
+                    out: [
+                        { name: 'Output', range: [-1, 1] }
+                    ],
+                    data: [[0]]
+                };
+            }
+
             const svg = d3.select(this.$refs.chart);
             svg.selectAll("*").remove();
 
@@ -119,7 +126,7 @@ export default {
 
             const featureName2 = (data.in[1].name !== undefined) ? data.in[1].name : "Feature 2";
             svg.append("text")
-                .attr("x", -this.height / 2)
+                .attr("x", -this.height / 2 + 20)
                 .attr("y", 30)
                 .attr("transform", "rotate(-90)")
                 .style("text-anchor", "middle")

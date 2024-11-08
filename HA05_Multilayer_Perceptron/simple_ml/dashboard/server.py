@@ -2,6 +2,8 @@
     Run by `python -m simple_ml.dashboard.server` outside the package.
 """
 
+import json
+
 from sanic import Sanic, response
 from sanic import HTTPResponse, Request, Websocket
 
@@ -17,7 +19,7 @@ APP_PORT = 2333
 app = Sanic(APP_NAME)
 
 clients = ClientsPool()
-core = DashboardCore(app, clients)
+core = DashboardCore(clients)
 
 
 """ CORS Middleware """
@@ -53,12 +55,7 @@ def index(request: Request):
 @app.websocket('/notify') # new client
 async def notify(request: Request, ws: Websocket):
     clients.add(ws)
-    
-    try:
-        async for msg in ws: # TODO: 异步监听？
-            print(f'Received: {msg}')
-    except Exception as e:
-        print(f'WebSocket error: {e}')
+    await core.async_ws_listener(ws)
 
 @app.get('/api/get_state')
 def api_get_state(request: Request):
@@ -70,6 +67,40 @@ def api_get_state(request: Request):
 @app.post('/api/launch')
 def api_launch(request: Request):
     data = request.json
+    """
+    {
+        'dataset': {
+            'type': 'builtin',
+            'name': '<function_name>',
+            'test_ratio': 0.2,
+            'batch_size': ...,
+            'params': {...: ...}
+        },
+        # 'dataset': {
+        #     'type': 'direct',
+        #     'test_ratio': 0.2,
+        #     'batch_size': ...,
+        #     'datas': [
+        #         [[[...]]],
+        #         [[...]],
+        #         ...
+        #     ]
+        # },
+        'model': [
+            {'type': 'Linear', 'params': {...: ...}},
+            {'type': 'Sigmoid'},
+            ...
+        ],
+        'loss': {
+            'type': 'MSELoss',
+            'params': {...: ...}
+        },
+        'optimizer': {
+            'type': 'GD',
+            'params': {...: ...}
+        }
+    }
+    """
 
     for key in ['model', 'loss', 'dataset', 'optimizer']:
         if key not in data.keys():
@@ -78,7 +109,7 @@ def api_launch(request: Request):
                 'message': f'{key} is required.'
             })
     
-    if core.launch_task(data):
+    if core.launch(data):
         return response.json({
             'status': 'ok',
             'state': core.get_state()
@@ -89,9 +120,9 @@ def api_launch(request: Request):
             'message': 'Failed to launch task.'
         })
 
-@app.get('/api/stop')
+@app.get('/api/reset')
 def api_stop(request: Request):
-    core.stop_task()
+    core.reset()
     return response.json({
         'status': 'ok',
         'state': core.get_state()
@@ -99,7 +130,7 @@ def api_stop(request: Request):
 
 @app.get('/api/pause')
 def api_pause(request: Request):
-    core.pause_task()
+    core.pause()
     return response.json({
         'status': 'ok',
         'state': core.get_state()
@@ -107,7 +138,7 @@ def api_pause(request: Request):
 
 @app.get('/api/resume')
 def api_resume(request: Request):
-    core.resume_task()
+    core.resume()
     return response.json({
         'status': 'ok',
         'state': core.get_state()

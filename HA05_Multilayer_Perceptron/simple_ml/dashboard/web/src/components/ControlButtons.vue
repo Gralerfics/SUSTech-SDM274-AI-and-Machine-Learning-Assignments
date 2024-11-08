@@ -19,27 +19,26 @@ import global_config from '@/config.js'
 export default {
     data() {
         return {
-            state: 'stopped',
-            task_id: null
+            state: 'stopped'
         };
     },
     mounted() {
-        this.fetchState(); // fetch the core state when mounted
+        this.fetchState(); // fetch the core state on mount
     },
     methods: {
         async fetchState() {
             try {
                 const response = await axios.get(new URL("/api/get_state", global_config.http_address).href);
-                if (response.data.status === 'ok') {
-                    this.state = response.data.state.state;
-                    }
+                if (response.data && response.data.status === 'ok') {
+                    this.state = response.data.state;
+                }
             } catch (error) {
                 console.error("Failed to fetch state:", error);
             }
         },
         async handlePlayPause() {
             try {
-                let response = null;
+                let response = {};
                 if (this.state === 'stopped') {
                     response = await axios.post(
                         new URL("/api/launch", global_config.http_address).href,
@@ -63,21 +62,19 @@ export default {
                 } else if (this.state === 'running') {
                     response = await axios.get(new URL("/api/pause", global_config.http_address).href);
                 }
-                if (response !== null && response.data.status === 'ok') {
-                    this.state = response.data.state.state;
-                    this.task_id = (response.data.state.task_id !== undefined) ? response.data.state.task_id : null;
+                if (response.data && response.data.status === 'ok') {
+                    this.state = response.data.state;
                 }
             } catch (error) {
-                console.error("Play/Pause action failed:", error);
+                console.error("Play/Pause failed:", error);
             }
         },
         async handleReset() {
             try {
-                const response = await axios.get(new URL("/api/stop", global_config.http_address).href);
+                const response = await axios.get(new URL("/api/reset", global_config.http_address).href);
                 this.state = 'stopped';
-                this.$emit('reset');
             } catch (error) {
-                console.error("Reset action failed:", error);
+                console.error("Reset failed:", error);
             }
         }
     }

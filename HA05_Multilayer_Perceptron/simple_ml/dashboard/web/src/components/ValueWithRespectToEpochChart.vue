@@ -37,7 +37,14 @@ export default {
         this.drawChart(this.values);
     },
     methods: {
+        isValidData(data) {
+            return (data !== null && data !== undefined);
+        },
         drawChart(data) {
+            if (!this.isValidData(data)) {
+                data = [];
+            }
+
             const svg = d3.select(this.$refs.chart);
             svg.selectAll("*").remove();
 
