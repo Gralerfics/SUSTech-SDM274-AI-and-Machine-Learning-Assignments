@@ -69,7 +69,7 @@ export default {
 
         this.pollInterval = setInterval(() => {
             if (this.isWebsocketConnected) {
-                this.$socket.send(JSON.stringify({ // TODO: sendObj
+                this.$socket.send(JSON.stringify({
                     type: 'poll'
                 }));
             }
@@ -78,57 +78,6 @@ export default {
     beforeUnmount() {
         if (this.pollInterval) {
             clearInterval(this.pollInterval);
-        }
-    },
-    methods: {
-        recursivelyMerge(target, source) {
-            for (const key in source) {
-                if (
-                    key in target &&
-                    source[key].constructor === Object &&
-                    target[key].constructor === Object
-                ) {
-                    this.recursivelyMerge(target[key], source[key]);
-                } else {
-                    target[key] = source[key];
-                }
-            }
-            return target;
-        },
-        getViewDatabaseEntry(propName) {
-            const keys = propName.split(".").slice(1);
-            let current = this.viewDatabase;
-
-            for (const key of keys) {
-                if (current[key] === undefined) {
-                    return undefined;
-                }
-                current = current[key];
-            }
-
-            return current;
-        },
-        updateViewDatabaseEntry(propName, propValue) {
-            const path = propName.split('.').slice(1);
-
-            let current = this.viewDatabase;
-
-            for (let i = 0; i < path.length; i ++) {
-                const key = path[i];
-
-                if (i === path.length - 1 && propValue.constructor !== Object) {
-                    current[key] = propValue;
-                } else {
-                    if (!current[key]) {
-                        current[key] = {};
-                    }
-                    current = current[key];
-                }
-            }
-
-            if (propValue.constructor === Object) {
-                this.recursivelyMerge(current, propValue);
-            }
         }
     }
 };

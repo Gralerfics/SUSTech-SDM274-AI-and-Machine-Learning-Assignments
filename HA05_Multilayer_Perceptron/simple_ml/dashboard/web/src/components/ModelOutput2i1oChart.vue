@@ -26,6 +26,10 @@ export default {
         }
     },
     mounted() {
+        // this.$options.sockets.onopen = () => {
+        //     this.$socket.send
+        // }
+
         this.drawChart(this.model_output);
     },
     methods: {

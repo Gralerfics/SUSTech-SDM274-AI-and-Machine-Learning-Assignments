@@ -103,8 +103,9 @@ class DashboardCore:
     def reset(self):
         self.stop()
         self.resume()
-
+        
         # TODO: reset, perhaps broadcast an empty update to the whole pool
+        self.update_msg_buffer({ key: None for key in self.get_msg_buffer().keys() })
     
     def run(self): # TODO: now only for 2d classification
         train_iter = DataIterator(self.train_dataset, batch_size = 32, shuffle = True, cyclic = False)
@@ -197,8 +198,6 @@ class DashboardCore:
         self.optimizer = None
         
         self.epoch = 0
-
-        self.msg_buffer.clear()
     
     async def async_ws_listener(self, ws):
         try:
@@ -219,7 +218,7 @@ class DashboardCore:
                         prop_names = data['prop_names']
                         if isinstance(prop_names, str):
                             prop_names = [prop_names]
-                        prop_values = {prop_name: self.get_msg_buffer().get(prop_name, None) for prop_name in prop_names}
+                        prop_values = { prop_name: self.get_msg_buffer().get(prop_name, None) for prop_name in prop_names }
                     
                     await ws.send(json.dumps({
                         'type': 'poll_response',
