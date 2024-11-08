@@ -4,14 +4,14 @@
             :epoch="viewDatabase.epoch"
         />
 
-        <ControlButtons />
+        <ControlButtons @refreshTask="refreshTask" />
 
         <ModelOutput2i1oChart
             :model_output="viewDatabase.model_output"
             :train_dataset="viewDatabase.train_dataset"
             :test_dataset="viewDatabase.test_dataset"
-            :width="500"
-            :height="500"
+            :width="300"
+            :height="300"
         />
 
         <ValueWithRespectToEpochChart
@@ -48,7 +48,7 @@ export default {
     data() {
         return {
             isWebsocketConnected: false,
-            viewDatabase: {} // 各组件应有 isValidData 和 drawChart 方法，若数据不合法（null/undefined 等）则应绘制空白图（例如以赋特定值的方式）
+            viewDatabase: {} // 各组件若数据不合法（null/undefined 等）应绘制空白图（例如以赋特定值的方式）
         }
     },
     mounted() {
@@ -81,6 +81,14 @@ export default {
     beforeUnmount() {
         if (this.pollInterval) {
             clearInterval(this.pollInterval);
+        }
+    },
+    methods: {
+        refreshTask() {
+            this.$socket.send(JSON.stringify({
+                type: 'poll',
+                prop_names: ['train_dataset', 'test_dataset']
+            }));
         }
     }
 };

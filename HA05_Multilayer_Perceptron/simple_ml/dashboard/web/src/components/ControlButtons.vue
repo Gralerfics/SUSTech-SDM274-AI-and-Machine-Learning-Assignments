@@ -57,6 +57,7 @@ export default {
                             }
                         } // TODO
                     );
+                    this.$emit('refreshTask');
                 } else if (this.state === 'paused') {
                     response = await axios.get(new URL("/api/resume", global_config.http_address).href);
                 } else if (this.state === 'running') {

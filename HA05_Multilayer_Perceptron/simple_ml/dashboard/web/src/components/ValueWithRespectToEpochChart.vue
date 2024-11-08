@@ -37,11 +37,8 @@ export default {
         this.drawChart(this.values);
     },
     methods: {
-        isValidData(data) {
-            return (data !== null && data !== undefined);
-        },
         drawChart(data) {
-            if (!this.isValidData(data)) {
+            if (data === null || data === undefined) {
                 data = [];
             }
 
@@ -70,7 +67,7 @@ export default {
                 .data([data])
                 .attr("fill", "none")
                 .attr("stroke", "black")
-                .attr("stroke-width", 2)
+                .attr("stroke-width", 1)
                 .attr("d", line);
 
             // dynamic x ticks

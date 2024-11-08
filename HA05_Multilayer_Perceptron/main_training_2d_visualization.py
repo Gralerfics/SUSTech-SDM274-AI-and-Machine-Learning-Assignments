@@ -106,7 +106,7 @@ for epoch in range(epoch_num):
     test_accuracy_history.append(test_accuracy)
 
     # update the plot
-    if epoch % 1 == 0:
+    if epoch % 100 == 0:
         visualizer.update(epoch, train_loss_history, train_accuracy_history, test_loss_history, test_accuracy_history)
 
 plt.show()

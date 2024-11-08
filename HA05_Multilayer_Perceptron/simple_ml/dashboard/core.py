@@ -63,16 +63,16 @@ class DashboardCore:
         self.reset()
         
         # dataset, TODO: parser
-        data_np = generate_2d_classification_circle(N = 1000)
+        data_np = generate_2d_classification_circle(N = 500)
         dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
         self.train_dataset, self.test_dataset = split_train_and_test_dataset(dataset, 0.2)
 
         # model, TODO: parser
         self.model = Sequential([
             Linear(2, 4),
-            Sigmoid(),
+            ReLU(),
             Linear(4, 2),
-            Sigmoid(),
+            ReLU(),
             Linear(2, 1)
         ])
 
@@ -80,7 +80,8 @@ class DashboardCore:
         self.loss = MSELoss()
 
         # optimizer, TODO: parser
-        self.optimizer = Adam(self.model.params, lr = 0.01)
+        # self.optimizer = Adam(self.model.params, lr = 0.001)
+        self.optimizer = GD(self.model.params, lr = 0.01)
 
         # launch task
         if self.is_runnable():
@@ -105,7 +106,7 @@ class DashboardCore:
         self.resume()
     
     def run(self): # TODO: now only for 2d classification
-        train_iter = DataIterator(self.train_dataset, batch_size = 32, shuffle = True, cyclic = False)
+        train_iter = DataIterator(self.train_dataset, batch_size = 10, shuffle = True, cyclic = False)
 
         train_loss_buffer = []
         train_accuracy_buffer = []
