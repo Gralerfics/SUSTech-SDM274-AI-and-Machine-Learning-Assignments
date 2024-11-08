@@ -58,6 +58,7 @@ class Task:
         train_iter = DataIterator(self.train_dataset, batch_size = 32, shuffle = True, cyclic = False)
 
         train_loss_buffer = []
+        train_accuracy_buffer = []
 
         while not self.is_stopped.is_set(): # run if is_stopped = False
             # block until is_resumed = True
@@ -80,12 +81,12 @@ class Task:
             train_loss /= len(self.train_dataset)
             train_accuracy /= len(self.train_dataset)
             train_loss_buffer.append(train_loss)
-            # train_accuracy_buffer.append(train_accuracy)
+            train_accuracy_buffer.append(train_accuracy)
 
             # record testing loss and accuracy
-            test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
-            test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
-            test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
+            # test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
+            # test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
+            # test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
             # test_loss_buffer.append(test_loss)
             # test_accuracy_buffer.append(test_accuracy)
 
@@ -93,6 +94,7 @@ class Task:
             msg = json.dumps({
                 'epoch': self.epoch,
                 'train_loss_buffer': train_loss_buffer,
+                'train_accuracy_buffer': train_accuracy_buffer
             })
             with self.update_msg_lock:
                 self.update_msg = msg
