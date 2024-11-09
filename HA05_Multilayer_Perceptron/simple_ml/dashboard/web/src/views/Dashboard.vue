@@ -33,7 +33,10 @@
             yAxisLabel="Train Accuracy"
         />
 
-        <ModelBuilder />
+        <ModelBuilder
+            :modelBlocks="taskConfig.model"
+            @update:modelBlocks="updateModelBlocks"
+        />
     </div>
 </template>
 
@@ -43,7 +46,7 @@ import ControlButtons from "@/components/ControlButtons.vue";
 import ValueWithRespectToEpochChart from "@/components/ValueWithRespectToEpochChart.vue";
 import ModelOutput2i1oChart from "@/components/ModelOutput2i1oChart.vue";
 
-import ModelBuilder from "@/components/ModelBuilder.vue";
+import ModelBuilder from '@/components/ModelBuilder.vue'
 
 export default {
     components: {
@@ -126,6 +129,9 @@ export default {
                 type: 'poll',
                 prop_names: ['train_dataset', 'test_dataset']
             }));
+        },
+        updateModelBlocks(newModelBlocks) {
+            this.taskConfig.model = newModelBlocks
         }
     }
 };

@@ -123,99 +123,102 @@ class DashboardCore:
         self.resume()
     
     def run(self): # TODO: now only for 2d classification
-        train_iter = DataIterator(self.train_dataset, batch_size = self.batch_size, shuffle = True, cyclic = False)
+        try:
+            train_iter = DataIterator(self.train_dataset, batch_size = self.batch_size, shuffle = True, cyclic = False)
 
-        train_loss_buffer = []
-        train_accuracy_buffer = []
-        test_loss_buffer = []
-        test_accuracy_buffer = []
+            train_loss_buffer = []
+            train_accuracy_buffer = []
+            test_loss_buffer = []
+            test_accuracy_buffer = []
 
-        # for model output visualization (temporary) TODO
-        x1_range = (-6, 6, 60)
-        x2_range = (-6, 6, 60)
-        x1, x2 = np.meshgrid(np.linspace(*x1_range), np.linspace(*x2_range))
-        model_output_features = Variable(np.c_[x1.ravel(), x2.ravel()])
+            # for model output visualization (temporary) TODO
+            x1_range = (-6, 6, 60)
+            x2_range = (-6, 6, 60)
+            x1, x2 = np.meshgrid(np.linspace(*x1_range), np.linspace(*x2_range))
+            model_output_features = Variable(np.c_[x1.ravel(), x2.ravel()])
 
-        # invariant message
-        self.update_msg_buffer({
-            'model_output': {
-                'type': '2i1o',
-                'in': [
-                    {'name': 'x_1', 'range': x1_range},
-                    {'name': 'x_2', 'range': x2_range}
-                ],
-                'out': [
-                    {'name': 'output', 'range': (-1, 1)}
-                ]
-            },
-            'train_dataset': {
-                'type': '2i1o',
-                'data_in': self.train_dataset.datas[0].tolist(),
-                'data_out': self.train_dataset.datas[1].tolist()
-            },
-            'test_dataset': {
-                'type': '2i1o',
-                'data_in': self.test_dataset.datas[0].tolist(),
-                'data_out': self.test_dataset.datas[1].tolist()
-            }
-        })
-
-        while not self.is_stopped.is_set(): # continue if is_stopped = False
-            # block until is_resumed = True
-            self.is_resumed.wait()
-
-            train_loss = 0
-            train_accuracy = 0
-
-            for batch, [features, labels] in enumerate(train_iter):
-                prediction = self.model(Variable(features, derivable = True)) # must be wrapped by Variable
-                loss = self.loss(prediction, labels) # calculate loss and gradient (!)
-
-                self.model.backward()
-                self.optimizer.step()
-
-                train_loss += loss * features.shape[0]
-                train_accuracy += eval_binary_accuracy(prediction, labels) * features.shape[0]
-            
-            # record training loss and accuracy
-            train_loss /= len(self.train_dataset)
-            train_accuracy /= len(self.train_dataset)
-            train_loss_buffer.append(train_loss)
-            train_accuracy_buffer.append(train_accuracy)
-
-            # record testing loss and accuracy
-            test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
-            test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
-            test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
-            test_loss_buffer.append(test_loss)
-            test_accuracy_buffer.append(test_accuracy)
-
-            # message update
+            # invariant message
             self.update_msg_buffer({
-                'epoch': self.epoch,
-                'train_loss_buffer': train_loss_buffer,
-                'train_accuracy_buffer': train_accuracy_buffer,
-                'test_loss_buffer': test_loss_buffer,
-                'test_accuracy_buffer': test_accuracy_buffer,
                 'model_output': {
-                    'data': self.model(model_output_features).value.reshape(x1.shape).tolist()
+                    'type': '2i1o',
+                    'in': [
+                        {'name': 'x_1', 'range': x1_range},
+                        {'name': 'x_2', 'range': x2_range}
+                    ],
+                    'out': [
+                        {'name': 'output', 'range': (-1, 1)}
+                    ]
+                },
+                'train_dataset': {
+                    'type': '2i1o',
+                    'data_in': self.train_dataset.datas[0].tolist(),
+                    'data_out': self.train_dataset.datas[1].tolist()
+                },
+                'test_dataset': {
+                    'type': '2i1o',
+                    'data_in': self.test_dataset.datas[0].tolist(),
+                    'data_out': self.test_dataset.datas[1].tolist()
                 }
             })
 
-            # next epoch
-            self.epoch += 1
+            while not self.is_stopped.is_set(): # continue if is_stopped = False
+                # block until is_resumed = True
+                self.is_resumed.wait()
 
-        # destroy the task
-        self.train_dataset = None
-        self.test_dataset = None
-        self.model = None
-        self.loss = None
-        self.optimizer = None
-        
-        self.epoch = 0
+                train_loss = 0
+                train_accuracy = 0
 
-        # clear frontend view database
-        self.update_msg_buffer({ key: None for key in self.get_msg_buffer().keys() })
+                for batch, [features, labels] in enumerate(train_iter):
+                    prediction = self.model(Variable(features, derivable = True)) # must be wrapped by Variable
+                    loss = self.loss(prediction, labels) # calculate loss and gradient (!)
+
+                    self.model.backward()
+                    self.optimizer.step()
+
+                    train_loss += loss * features.shape[0]
+                    train_accuracy += eval_binary_accuracy(prediction, labels) * features.shape[0]
+                
+                # record training loss and accuracy
+                train_loss /= len(self.train_dataset)
+                train_accuracy /= len(self.train_dataset)
+                train_loss_buffer.append(train_loss)
+                train_accuracy_buffer.append(train_accuracy)
+
+                # record testing loss and accuracy
+                test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
+                test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
+                test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
+                test_loss_buffer.append(test_loss)
+                test_accuracy_buffer.append(test_accuracy)
+
+                # message update
+                self.update_msg_buffer({
+                    'epoch': self.epoch,
+                    'train_loss_buffer': train_loss_buffer,
+                    'train_accuracy_buffer': train_accuracy_buffer,
+                    'test_loss_buffer': test_loss_buffer,
+                    'test_accuracy_buffer': test_accuracy_buffer,
+                    'model_output': {
+                        'data': self.model(model_output_features).value.reshape(x1.shape).tolist()
+                    }
+                })
+
+                # next epoch
+                self.epoch += 1
+        except Exception:
+            print('[Error] Something went wrong')
+        finally:
+            # destroy the task
+            self.train_dataset = None
+            self.test_dataset = None
+            self.model = None
+            self.loss = None
+            self.optimizer = None
+            
+            self.epoch = 0
+
+            # clear frontend view database
+            self.update_msg_buffer({ key: None for key in self.get_msg_buffer().keys() })
     
     async def async_ws_listener(self, ws):
         try:
