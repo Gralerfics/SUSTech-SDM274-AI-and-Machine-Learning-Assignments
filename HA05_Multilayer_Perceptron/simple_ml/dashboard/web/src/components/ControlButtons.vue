@@ -48,7 +48,7 @@ export default {
                 if (this.state === 'stopped') {
                     response = await axios.post(
                         new URL("/api/launch", global_config.http_address).href,
-                        this.taskConfig // TODO
+                        this.taskConfig
                     );
                     this.$emit('refreshTask');
                 } else if (this.state === 'paused') {

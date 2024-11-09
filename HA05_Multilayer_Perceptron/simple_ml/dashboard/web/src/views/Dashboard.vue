@@ -32,6 +32,8 @@
             :yAxisDomain="[0, 1]"
             yAxisLabel="Train Accuracy"
         />
+
+        <ModelBuilder />
     </div>
 </template>
 
@@ -41,12 +43,15 @@ import ControlButtons from "@/components/ControlButtons.vue";
 import ValueWithRespectToEpochChart from "@/components/ValueWithRespectToEpochChart.vue";
 import ModelOutput2i1oChart from "@/components/ModelOutput2i1oChart.vue";
 
+import ModelBuilder from "@/components/ModelBuilder.vue";
+
 export default {
     components: {
         EpochIndicator,
         ControlButtons,
         ValueWithRespectToEpochChart,
-        ModelOutput2i1oChart
+        ModelOutput2i1oChart,
+        ModelBuilder
     },
     data() {
         return {
@@ -79,7 +84,7 @@ export default {
                         lr: 0.01
                     }
                 }
-            },
+            }, // TODO
             viewDatabase: {} // 各组件若数据不合法（null/undefined 等）应绘制空白图（例如以赋特定值的方式）
         }
     },
