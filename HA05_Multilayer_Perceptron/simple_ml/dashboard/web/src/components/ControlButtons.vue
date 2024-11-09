@@ -17,6 +17,12 @@ import axios from 'axios';
 import global_config from '@/config.js'
 
 export default {
+    props: {
+        taskConfig: {
+            type: Object,
+            required: true
+        }
+    },
     data() {
         return {
             state: 'stopped'
@@ -42,20 +48,7 @@ export default {
                 if (this.state === 'stopped') {
                     response = await axios.post(
                         new URL("/api/launch", global_config.http_address).href,
-                        {
-                            dataset: {
-
-                            },
-                            model: {
-
-                            },
-                            loss: {
-
-                            },
-                            optimizer: {
-
-                            }
-                        } // TODO
+                        this.taskConfig // TODO
                     );
                     this.$emit('refreshTask');
                 } else if (this.state === 'paused') {

@@ -14,7 +14,9 @@ class Dataset:
         self.file_path: str = kwargs.get('file_path', None)
         assert (self.data_raw is not None and self.file_path is None) or (self.data_raw is None and self.file_path is not None) # only one of them should be provided
 
-        self.preprocess_func = kwargs.get('preprocess_func', self.default_preprocess_func)
+        self.preprocess_func = kwargs.get('preprocess_func', None)
+        if self.preprocess_func is None:
+            self.preprocess_func = self.default_preprocess_func
 
         if self.file_path is not None:
             # from disk

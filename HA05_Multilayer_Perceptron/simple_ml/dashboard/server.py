@@ -72,20 +72,11 @@ def api_launch(request: Request):
         'dataset': {
             'type': 'builtin',
             'name': '<function_name>',
+            'params': {...: ...},
+            'proc': '<preprocess_function_name>',
             'test_ratio': 0.2,
-            'batch_size': ...,
-            'params': {...: ...}
+            'batch_size': ...
         },
-        # 'dataset': {
-        #     'type': 'direct',
-        #     'test_ratio': 0.2,
-        #     'batch_size': ...,
-        #     'datas': [
-        #         [[[...]]],
-        #         [[...]],
-        #         ...
-        #     ]
-        # },
         'model': [
             {'type': 'Linear', 'params': {...: ...}},
             {'type': 'Sigmoid'},
@@ -103,6 +94,7 @@ def api_launch(request: Request):
     """
 
     for key in ['model', 'loss', 'dataset', 'optimizer']:
+        # TODO: full validation
         if key not in data.keys():
             return response.json({
                 'status': 'error',

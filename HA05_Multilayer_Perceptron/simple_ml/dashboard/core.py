@@ -8,13 +8,13 @@ import numpy as np
 import asyncio
 from sanic import Sanic
 
-from .. import Variable, Dataset, DataIterator, split_train_and_test_dataset
-from ..data.samples import label_split_for_2d_classification_dataset, generate_2d_classification_circle, generate_1d_regression_with_function
-from ..evaluation.criterion import eval_binary_accuracy
-from ..model import Model, Sequential
-from ..model.layers import Linear, ReLU, Sigmoid, Tanh
-from ..training.loss import MSELoss, CrossEntropyLoss
-from ..training.optimizer import GD, MomentumGD, Adam
+from .. import *
+from ..data.samples import *
+from ..evaluation.criterion import *
+from ..model import *
+from ..model.layers import *
+from ..training.loss import *
+from ..training.optimizer import *
 
 
 class DashboardCore:
@@ -23,6 +23,7 @@ class DashboardCore:
 
         self.train_dataset = None
         self.test_dataset = None
+        self.batch_size = None
         self.model = None
         self.loss = None
         self.optimizer = None
@@ -59,33 +60,49 @@ class DashboardCore:
         return 'stopped' if self.is_stopped.is_set() else ('running' if self.is_resumed.is_set() else 'paused')
     
     def launch(self, conf):
-        # stop the previous task
+        # Reset previous tasks
         self.reset()
         
-        # dataset, TODO: parser
-        data_np = generate_2d_classification_circle(N = 500)
-        dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
-        self.train_dataset, self.test_dataset = split_train_and_test_dataset(dataset, 0.2)
+        # Parse dataset
+        dataset_conf = conf['dataset']
+        dataset_type = dataset_conf['type']
+        
+        if dataset_type == 'builtin':
+            generate_func = globals().get(dataset_conf['name'])
+            preprocess_func = globals().get(dataset_conf.get('proc', None))
+            
+            data_np = generate_func(**dataset_conf.get('params', {}))
+            dataset = Dataset(data = data_np, preprocess_func = preprocess_func)
+            test_ratio = dataset_conf.get('test_ratio', 0.2)
+            self.train_dataset, self.test_dataset = split_train_and_test_dataset(dataset, test_ratio)
+            self.batch_size = dataset_conf.get('batch_size', 10)
 
-        # model, TODO: parser
-        self.model = Sequential([
-            Linear(2, 4),
-            ReLU(),
-            Linear(4, 2),
-            ReLU(),
-            Linear(2, 1)
-        ])
+        # Parse model structure
+        model_layers = []
+        for layer_conf in conf.get('model', []):
+            layer_type = layer_conf.get('type')
+            layer_params = layer_conf.get('params', {})
+            layer_class = globals().get(layer_type)
+            model_layers.append(layer_class(**layer_params))
+        self.model = Sequential(model_layers)
 
-        # loss, TODO: parser
-        self.loss = MSELoss()
+        # Parse loss function
+        loss_conf = conf['loss']
+        loss_type = loss_conf.get('type', 'MSELoss')
+        loss_params = loss_conf.get('params', {})
+        loss_class = globals().get(loss_type)
+        self.loss = loss_class(**loss_params)
 
-        # optimizer, TODO: parser
-        # self.optimizer = Adam(self.model.params, lr = 0.001)
-        self.optimizer = GD(self.model.params, lr = 0.01)
+        # Parse optimizer
+        optimizer_conf = conf['optimizer']
+        optimizer_type = optimizer_conf.get('type', 'GD')
+        optimizer_params = optimizer_conf.get('params', { 'lr': 0.01 })
+        optimizer_class = globals().get(optimizer_type)
+        self.optimizer = optimizer_class(self.model.params, **optimizer_params)
 
-        # launch task
+        # Launch task
         if self.is_runnable():
-            self.is_stopped.clear() # False
+            self.is_stopped.clear()  # False
             task_thread = threading.Thread(target = self.run)
             task_thread.start()
             return True
@@ -106,7 +123,7 @@ class DashboardCore:
         self.resume()
     
     def run(self): # TODO: now only for 2d classification
-        train_iter = DataIterator(self.train_dataset, batch_size = 10, shuffle = True, cyclic = False)
+        train_iter = DataIterator(self.train_dataset, batch_size = self.batch_size, shuffle = True, cyclic = False)
 
         train_loss_buffer = []
         train_accuracy_buffer = []
