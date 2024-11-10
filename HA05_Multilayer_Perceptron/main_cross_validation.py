@@ -103,27 +103,6 @@ plt.legend()
 plt.show()
 
 
-
-# 数据集 -> 训练集 + 验证集
-# 超参搜索：
-#     重复搜索范围次：
-#         交叉验证：
-#             选取超参数
-#             重复 k 次：
-#                 训练集 -> 训练集 + 验证集
-#                 训练模型，得到该超参、该划分下模型的指标
-#                     [ HERE ]
-#             平均（或其他）各划分后模型的好坏（不交叉验证容易过拟合）
-#         得该超参下模型的好坏
-#     选取最好的超参
-
-# [ HERE ] 训练模型：
-#     初始化参数
-#     训练轮次（epoch）：
-#         优化器（取本轮所用数据，问模型要loss和gradient，去调模型的参数）
-
-
-
 # Project Description: Multilayer Perceptron (MLP) Implementation and Evaluation
 
 # 1. Develop a Multilayer Perceptron (MLP) Model Using NumPy:
