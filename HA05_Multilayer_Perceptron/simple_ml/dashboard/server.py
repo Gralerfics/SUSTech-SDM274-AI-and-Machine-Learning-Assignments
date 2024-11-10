@@ -64,6 +64,10 @@ def api_get_state(request: Request):
         'state': core.get_state()
     })
 
+@app.post('/api/kfold_cv')
+def api_kfold_cv(request: Request):
+    pass
+
 @app.post('/api/launch')
 def api_launch(request: Request):
     data = request.json

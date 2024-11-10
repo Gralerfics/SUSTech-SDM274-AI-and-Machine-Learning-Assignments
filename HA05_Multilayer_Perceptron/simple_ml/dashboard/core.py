@@ -59,6 +59,9 @@ class DashboardCore:
     def get_state(self):
         return 'stopped' if self.is_stopped.is_set() else ('running' if self.is_resumed.is_set() else 'paused')
     
+    def kfold(self, conf, k = 5):
+        pass
+
     def launch(self, conf):
         # Reset previous tasks
         self.reset()

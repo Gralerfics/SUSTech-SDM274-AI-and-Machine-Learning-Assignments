@@ -23,7 +23,7 @@
                     <select v-model="taskConfig.dataset.name">
                         <option value="generate_2d_classification_circle">2D Classification (Circle)</option>
                         <option value="generate_2d_classification_exclusive_or">2D Classification (XOR)</option>
-                        <option value="generate_2d_classification_example_scatter">2D Classification (Scatter)</option>
+                        <option value="generate_2d_classification_example_scatter">2D Classification (Scatter, N === 32)</option>
                         <option value="generate_1d_regression_with_function">1D Regression (Non-linear function)</option>
                     </select>
                 </div>

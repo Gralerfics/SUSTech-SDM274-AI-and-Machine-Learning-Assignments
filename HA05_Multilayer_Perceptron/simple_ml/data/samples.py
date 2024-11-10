@@ -5,7 +5,7 @@ def label_split_for_single_output_dataset(data: np.ndarray):
     return data[:, :-1], data[:, -1].reshape(-1, 1) # [x_1, x_2], t
 
 
-def generate_2d_classification_circle(N = 500, r_0 = 2.3, r_1 = 3.5, r_2 = 5, noise = 0, label_in = 1, label_out = -1, seed = None):
+def generate_2d_classification_circle(N = 500, r_0 = 2.3, r_1 = 3.5, r_2 = 5, noise = 0, label_in = 1, label_out = -1, seed = None, **kwargs):
     if seed is not None:
         np.random.seed(seed)
     
@@ -25,7 +25,7 @@ def generate_2d_classification_circle(N = 500, r_0 = 2.3, r_1 = 3.5, r_2 = 5, no
     return np.c_[coords, labels]
 
 
-def generate_2d_classification_exclusive_or(N = 500, l = 5.2, pad = 0.3, noise = 0, label_low = -1, label_high = 1, seed = None):
+def generate_2d_classification_exclusive_or(N = 500, l = 5.2, pad = 0.3, noise = 0, label_low = -1, label_high = 1, seed = None, **kwargs):
     if seed is not None:
         np.random.seed(seed)
 
@@ -45,7 +45,7 @@ def generate_2d_classification_exclusive_or(N = 500, l = 5.2, pad = 0.3, noise =
     return np.c_[coords, labels]
 
 
-def generate_2d_classification_gaussians(gaussian_configs, seed = None):
+def generate_2d_classification_gaussians(gaussian_configs, seed = None, **kwargs):
     if seed is not None:
         np.random.seed(seed)
 
@@ -59,7 +59,7 @@ def generate_2d_classification_gaussians(gaussian_configs, seed = None):
     return data
 
 
-def generate_2d_classification_example_scatter():
+def generate_2d_classification_example_scatter(**kwargs):
     return np.array([
         [-3.2, 4.5, 1],
         [-2.6, 4.7, 1],

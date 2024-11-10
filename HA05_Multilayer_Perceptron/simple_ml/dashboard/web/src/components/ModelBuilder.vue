@@ -1,9 +1,10 @@
 <template>
     <div class="model-builder">
         <div class="building-zone">
-            <button @click="addBlock('Linear')" class="add-block-btn">Add Linear Layer</button>
-            <button @click="addBlock('Sigmoid')" class="add-block-btn">Add Sigmoid Layer</button>
-            <button @click="addBlock('ReLU')" class="add-block-btn">Add ReLU Layer</button>
+            <button @click="addBlock('Linear')" class="add-block-btn">Add Linear</button>
+            <button @click="addBlock('Sigmoid')" class="add-block-btn">Add Sigmoid</button>
+            <button @click="addBlock('ReLU')" class="add-block-btn">Add ReLU</button>
+            <button @click="addBlock('Tanh')" class="add-block-btn">Add Tanh</button>
 
             <VueDraggable
                 v-model="localModelBlocks"
@@ -75,6 +76,9 @@ export default {
                     break
                 case 'ReLU':
                     newBlock = { type: 'ReLU', params: {} }
+                    break
+                case 'Tanh':
+                    newBlock = { type: 'Tanh', params: {} }
                     break
             }
             this.localModelBlocks.push(newBlock)
