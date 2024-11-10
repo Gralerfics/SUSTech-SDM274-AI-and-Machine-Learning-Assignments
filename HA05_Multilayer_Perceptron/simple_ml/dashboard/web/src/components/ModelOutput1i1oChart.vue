@@ -41,7 +41,7 @@ export default {
         }
     },
     watch: {
-        model_output: 'drawHeatmap',
+        model_output: 'drawCurve',
     },
     mounted() {
         this.$options.sockets.onopen = () => {
@@ -51,40 +51,28 @@ export default {
             }));
         }
 
-        this.drawHeatmap();
+        this.drawCurve();
     },
     methods: {
         isModelOutputValid(data) {
             return (
                 data &&
-                data.type === '2i1o' &&
+                data.type === '1i1o' &&
                 data.in &&
                 Array.isArray(data.in) &&
-                data.in.length === 2 &&
+                data.in.length === 1 &&
                 data.in[0].range &&
-                data.in[1].range &&
                 data.out &&
                 Array.isArray(data.out) &&
                 data.out.length === 1 &&
                 data.out[0].range &&
                 data.data &&
-                Array.isArray(data.data) &&
-                Array.isArray(data.data[0])
+                Array.isArray(data.data)
             );
         },
-        isDatasetValid(data) {
-            return (
-                data &&
-                data.type === '2i1o' &&
-                data.data_in &&
-                Array.isArray(data.data_in) &&
-                data.data_out &&
-                Array.isArray(data.data_out)
-            );
-        },
-        drawHeatmap() {
+        drawCurve() {
             const svg = d3.select(this.$refs.chart);
-            svg.selectAll(".heatmap").remove();
+            svg.selectAll(".curve").remove();
             svg.selectAll(".train_scatter").remove();
             svg.selectAll(".test_scatter").remove();
 
@@ -93,49 +81,47 @@ export default {
             let mo_flag = this.isModelOutputValid(mo);
             if (!mo_flag) {
                 mo = {
-                    type: '2i1o',
+                    type: '1i1o',
                     in: [
-                        {name: 'Feature 1', range: [0, 1, 1]},
-                        {name: 'Feature 2', range: [0, 1, 1]}
+                        {name: 'Input', range: [0, 1, 1]},
                     ],
                     out: [
                         {name: 'Output', range: [-1, 1]}
                     ],
-                    data: [[0]]
+                    data: [0]
                 };
             }
-            const x1_range = mo.in[0].range;
-            const x2_range = mo.in[1].range;
+            const x_range = mo.in[0].range;
             const output_range = mo.out[0].range;
-            const gridData = mo.data;
-            const featureName1 = (mo.in[0].name !== undefined) ? mo.in[0].name : "Feature 1";
-            const featureName2 = (mo.in[1].name !== undefined) ? mo.in[1].name : "Feature 2";
+            const data = mo.data;
+            const featureName = (mo.in[0].name !== undefined) ? mo.in[0].name : "Input";
+            const outputName = (mo.out[0].name !== undefined) ? mo.out[0].name : "Output";
 
             // _dataset data
             let dstr = this.train_dataset, dste = this.test_dataset;
             if (!this.isDatasetValid(dstr)) {
                 dstr = {
-                    type: '2i1o',
+                    type: '1i1o',
                     data_in: [],
                     data_out: []
                 }
             }
             if (!this.isDatasetValid(dste)) {
                 dste = {
-                    type: '2i1o',
+                    type: '1i1o',
                     data_in: [],
                     data_out: []
                 }
             }
 
             // scale
-            const xScale = d3.scaleLinear()
-                .domain([x1_range[0], x1_range[1]])
-                .range([60, this.width - 20]);
+            const x = d3.scaleLinear()
+                .domain([x_range[0], x_range[1]])
+                .range([60, this.width - 50]);
 
-            const yScale = d3.scaleLinear()
-                .domain([x2_range[0], x2_range[1]])
-                .range([this.height - 60, 20]);
+            const y = d3.scaleLinear()
+                .domain([output_range[0], output_range[1]])
+                .range([this.height - 45, 20]);
 
             // colormap
             let tmpScale = d3.scaleLinear()
@@ -149,34 +135,20 @@ export default {
                 .domain([output_range[0], output_range[1]])
                 .range(colors);
 
-            // mesh grids
-            const viewWidth = this.width - 80;
-            const viewHeight = this.height - 80;
-
-            const cellWidth = viewWidth / x1_range[2] + 1;
-            const cellHeight = viewHeight / x2_range[2] + 1;
-
-            gridData.forEach((row, i) => {
-                row.forEach((value, j) => {
-                    svg.append("rect")
-                        .attr("class", "heatmap")
-                        .attr("x", xScale(x1_range[0] + j * (x1_range[1] - x1_range[0]) / x1_range[2]))
-                        .attr("y", yScale(x2_range[0] + (i + 1) * (x2_range[1] - x2_range[0]) / x2_range[2]))
-                        .attr("width", cellWidth)
-                        .attr("height", cellHeight)
-                        .attr("fill", colorScale(value));
-                });
-            });
+            // line generator
+            const line = d3.line()
+                .x((d, i) => x(x_range[0] + i * (x_range[1] - x_range[0]) / x_range[2]))
+                .y(d => y(d));
 
             // scatters, TODO: filter outside points
             const plotPoints = (dataset, cls, borderColor) => {
-                dataset.data_in.forEach((point, index) => {
+                dataset.data_in.forEach((d, i) => {
                     svg.append("circle")
                         .attr("class", cls)
-                        .attr("cx", xScale(point[0]))
-                        .attr("cy", yScale(point[1]))
+                        .attr("cx", x(d))
+                        .attr("cy", y(dataset.data_out[i]))
                         .attr("r", this.dotRadius)
-                        .attr("fill", colorScale(dataset.data_out[index]))
+                        .attr("fill", "#f59322")
                         .attr("stroke", borderColor)
                         .attr("stroke-width", this.dotBorder);
                 });
@@ -186,33 +158,57 @@ export default {
                 plotPoints(dste, 'test_scatter', "#000000");
             }
 
-            // axes
-            const xAxis = d3.axisBottom(xScale).ticks(10);
-            svg.append("g")
-                .attr("class", "heatmap")
-                .attr("transform", `translate(0, ${this.height - 60})`)
-                .call(xAxis)
+            // curve
+            svg.append("path")
+                .data([data])
+                .attr("class", "curve")
+                .attr("fill", "none")
+                .attr("stroke", "#000000")
+                .attr("stroke-width", 2)
+                .attr("d", line);
 
+            // dynamic x ticks
+            const xTicks = Math.min(data.length / 5, 10);
+            const xAxis = d3.axisBottom(x).ticks(xTicks);
+            svg.append("g")
+                .attr("class", "curve")
+                .attr("transform", `translate(0, ${this.height - 45})`)
+                .call(xAxis);
+
+            // x label
             svg.append("text")
-                .attr("class", "heatmap")
-                .attr("x", this.width / 2 + 20)
-                .attr("y", this.height - 20)
+                .attr("class", "curve")
+                .attr("x", this.width / 2)
+                .attr("y", this.height - 10)
                 .style("text-anchor", "middle")
-                .text(featureName1);
+                .text(featureName);
 
-            const yAxis = d3.axisLeft(yScale).ticks(10);
+            // dynamic y ticks
+            const yTicks = 5;
+            const yAxis = d3.axisLeft(y).ticks(yTicks);
             svg.append("g")
-                .attr("class", "heatmap")
+                .attr("class", "curve")
                 .attr("transform", "translate(60, 0)")
-                .call(yAxis)
+                .call(yAxis);
 
+            // y label
             svg.append("text")
-                .attr("class", "heatmap")
-                .attr("x", -this.height / 2 + 20)
-                .attr("y", 30)
+                .attr("class", "curve")
                 .attr("transform", "rotate(-90)")
+                .attr("y", 20)
+                .attr("x", -this.height / 2)
                 .style("text-anchor", "middle")
-                .text(featureName2);
+                .text(outputName);
+        },
+        isDatasetValid(data) {
+            return (
+                data &&
+                data.type === '1i1o' &&
+                data.data_in &&
+                Array.isArray(data.data_in) &&
+                data.data_out &&
+                Array.isArray(data.data_out)
+            );
         }
     }
 };

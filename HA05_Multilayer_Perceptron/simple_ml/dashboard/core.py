@@ -126,40 +126,63 @@ class DashboardCore:
         try:
             train_iter = DataIterator(self.train_dataset, batch_size = self.batch_size, shuffle = True, cyclic = False)
 
-            train_loss_buffer = []
-            train_accuracy_buffer = []
-            test_loss_buffer = []
-            test_accuracy_buffer = []
+            # model output (TODO: currently only for 1i1o & 2i1o)
+            padding_ratio = 0.1
+            
+            in_dim = self.train_dataset.datas[0].shape[1]
+            out_dim = self.train_dataset.datas[1].shape[1]
+            model_type = f'{in_dim}i{out_dim}o'
 
-            # for model output visualization (temporary) TODO
-            x1_range = (-6, 6, 60)
-            x2_range = (-6, 6, 60)
-            x1, x2 = np.meshgrid(np.linspace(*x1_range), np.linspace(*x2_range))
-            model_output_features = Variable(np.c_[x1.ravel(), x2.ravel()])
+            x_ranges = []
+            for i in range(in_dim):
+                xi_min = self.train_dataset.datas[0][:, i].min()
+                xi_max = self.train_dataset.datas[0][:, i].max()
+                xi_range = (xi_min - (xi_max - xi_min) * padding_ratio, xi_max + (xi_max - xi_min) * padding_ratio, 60)
+                x_ranges.append(xi_range)
+            
+            out_min = self.train_dataset.datas[1][:, 0].min()
+            out_max = self.train_dataset.datas[1][:, 0].max()
+            out_range = (out_min - (out_max - out_min) * padding_ratio, out_max + (out_max - out_min) * padding_ratio)
+            
+            if model_type == '1i1o':
+                model_output_features = Variable(np.linspace(*x_ranges[0]).reshape(-1, 1))
+            elif model_type == '2i1o':
+                x1, x2 = np.meshgrid(np.linspace(*x_ranges[0]), np.linspace(*x_ranges[1]))
+                model_output_features = Variable(np.c_[x1.ravel(), x2.ravel()])
+            
+            if model_type == '1i1o' or model_type == '2i1o':
+                self.update_msg_buffer({
+                    'model_output': {
+                        'type': model_type,
+                        'in': [
+                            {'name': f'x_{i + 1}', 'range': x_ranges[i]} for i in range(in_dim)
+                        ],
+                        'out': [
+                            {'name': 'output', 'range': out_range}
+                        ]
+                    }
+                })
 
-            # invariant message
+            # dataset
             self.update_msg_buffer({
-                'model_output': {
-                    'type': '2i1o',
-                    'in': [
-                        {'name': 'x_1', 'range': x1_range},
-                        {'name': 'x_2', 'range': x2_range}
-                    ],
-                    'out': [
-                        {'name': 'output', 'range': (-1, 1)}
-                    ]
-                },
                 'train_dataset': {
-                    'type': '2i1o',
+                    'type': model_type,
                     'data_in': self.train_dataset.datas[0].tolist(),
                     'data_out': self.train_dataset.datas[1].tolist()
                 },
                 'test_dataset': {
-                    'type': '2i1o',
+                    'type': model_type,
                     'data_in': self.test_dataset.datas[0].tolist(),
                     'data_out': self.test_dataset.datas[1].tolist()
                 }
             })
+
+            train_loss_buffer = []
+            train_accuracy_buffer = []
+            train_r2_buffer = []
+            test_loss_buffer = []
+            test_accuracy_buffer = []
+            test_r2_buffer = []
 
             while not self.is_stopped.is_set(): # continue if is_stopped = False
                 # block until is_resumed = True
@@ -167,6 +190,7 @@ class DashboardCore:
 
                 train_loss = 0
                 train_accuracy = 0
+                train_r2 = 0
 
                 for batch, [features, labels] in enumerate(train_iter):
                     prediction = self.model(Variable(features, derivable = True)) # must be wrapped by Variable
@@ -177,36 +201,49 @@ class DashboardCore:
 
                     train_loss += loss * features.shape[0]
                     train_accuracy += eval_binary_accuracy(prediction, labels) * features.shape[0]
+                    train_r2 += eval_regression_r2(prediction, labels) * features.shape[0]
                 
                 # record training loss and accuracy
                 train_loss /= len(self.train_dataset)
                 train_accuracy /= len(self.train_dataset)
+                train_r2 /= len(self.train_dataset)
                 train_loss_buffer.append(train_loss)
                 train_accuracy_buffer.append(train_accuracy)
+                train_r2_buffer.append(train_r2)
 
                 # record testing loss and accuracy
                 test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
                 test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
                 test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
+                test_r2 = eval_regression_r2(test_prediction, self.test_dataset.datas[1])
                 test_loss_buffer.append(test_loss)
                 test_accuracy_buffer.append(test_accuracy)
+                test_r2_buffer.append(test_r2)
 
                 # message update
                 self.update_msg_buffer({
                     'epoch': self.epoch,
                     'train_loss_buffer': train_loss_buffer,
-                    'train_accuracy_buffer': train_accuracy_buffer,
                     'test_loss_buffer': test_loss_buffer,
-                    'test_accuracy_buffer': test_accuracy_buffer,
-                    'model_output': {
-                        'data': self.model(model_output_features).value.reshape(x1.shape).tolist()
-                    }
                 })
+
+                if model_type == '1i1o' or model_type == '2i1o':
+                    model_output_data = self.model(model_output_features).value.reshape((60,) * in_dim).tolist()
+                    self.update_msg_buffer({
+                        'train_accuracy_buffer': train_accuracy_buffer,
+                        'test_accuracy_buffer': test_accuracy_buffer,
+                        'train_r2_buffer': train_r2_buffer,
+                        'test_r2_buffer': test_r2_buffer,
+                        'model_output': {
+                            'data': model_output_data
+                        }
+                    })
 
                 # next epoch
                 self.epoch += 1
-        except Exception:
-            print('[Error] Something went wrong')
+        # except Exception as e:
+        #     print('[Error] Something went wrong')
+        #     print(e)
         finally:
             # destroy the task
             self.train_dataset = None

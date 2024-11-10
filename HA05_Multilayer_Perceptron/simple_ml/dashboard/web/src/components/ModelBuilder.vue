@@ -83,7 +83,7 @@ export default {
             this.localModelBlocks.splice(index, 1)
         },
         onUpdate() {
-            console.log('Updated model structure')
+            // TODO
         }
     }
 };

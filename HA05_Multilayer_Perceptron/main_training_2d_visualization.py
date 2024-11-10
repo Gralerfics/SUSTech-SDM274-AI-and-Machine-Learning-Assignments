@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
-from simple_ml.data.samples import label_split_for_2d_classification_dataset, generate_2d_classification_circle, generate_2d_classification_exclusive_or, generate_2d_classification_gaussians, generate_2d_classification_example_scatter
+from simple_ml.data.samples import label_split_for_single_output_dataset, generate_2d_classification_circle, generate_2d_classification_exclusive_or, generate_2d_classification_gaussians, generate_2d_classification_example_scatter
 from simple_ml.evaluation.criterion import eval_binary_accuracy, eval_binary_recall, eval_binary_precision, eval_binary_f1_score
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
@@ -23,7 +23,7 @@ data_np = generate_2d_classification_circle(N = 1000)
 # ])
 # data_np = generate_2d_classification_example_scatter()
 
-dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
+dataset = Dataset(data = data_np, preprocess_func = label_split_for_single_output_dataset)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0)
 
 

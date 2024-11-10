@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def label_split_for_2d_classification_dataset(data: np.ndarray):
+def label_split_for_single_output_dataset(data: np.ndarray):
     return data[:, :-1], data[:, -1].reshape(-1, 1) # [x_1, x_2], t
 
 
@@ -96,7 +96,7 @@ def generate_2d_classification_example_scatter():
     ])
 
 
-def generate_1d_regression_with_function(N = 500, f = lambda x: 2 * x + 1, x_range = (-10, 10), noise = 1, seed = None):
+def generate_1d_regression_with_function(N = 500, f = lambda x: np.cos(x) + np.exp(-x ** 2) + x ** 3 / 233, x_range = (-10, 10), noise = 1, seed = None):
     assert f is not None
 
     if seed is not None:

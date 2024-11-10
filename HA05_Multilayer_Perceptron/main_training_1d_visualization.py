@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from simple_ml import Variable, Dataset, DataIterator, split_train_and_test_dataset
-from simple_ml.data.samples import label_split_for_2d_classification_dataset, generate_1d_regression_with_function
+from simple_ml.data.samples import label_split_for_single_output_dataset, generate_1d_regression_with_function
 from simple_ml.evaluation.criterion import eval_regression_r2
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
@@ -15,7 +15,7 @@ from simple_ml.visualization.plot import OneFeatureRegressionModelVisualizer
 """ Dataset """
 data_np = generate_1d_regression_with_function(N = 1000, f = lambda x: np.cos(x) + np.exp(-x ** 2) + x ** 3 / 233, x_range = (-10, 10), noise = 0.2)
 
-dataset = Dataset(data = data_np, preprocess_func = label_split_for_2d_classification_dataset)
+dataset = Dataset(data = data_np, preprocess_func = label_split_for_single_output_dataset)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
 
 
