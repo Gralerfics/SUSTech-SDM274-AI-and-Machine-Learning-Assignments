@@ -55,7 +55,7 @@ export default {
 
             const y = d3.scaleLinear()
                 .domain([(this.yAxisDomain[0] === null) ? d3.min(data) : this.yAxisDomain[0], (this.yAxisDomain[1] === null) ? d3.max(data) : this.yAxisDomain[1]])
-                .range([height - 45, 20]);
+                .range([height - 45, 40]);
 
             // line generator
             const line = d3.line()
@@ -98,6 +98,13 @@ export default {
                 .attr("x", -height / 2)
                 .style("text-anchor", "middle")
                 .text(this.yAxisLabel);
+
+            // y label
+            svg.append("text")
+                .attr("y", 24)
+                .attr("x", 10)
+                .style("text-anchor", "left")
+                .text(data[data.length - 1]);
         }
     }
 };

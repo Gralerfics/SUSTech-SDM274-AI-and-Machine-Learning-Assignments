@@ -15,7 +15,7 @@
             <div class="params-panel">
                 <div style="color: #555; font-weight: bold">
                     Dataset
-                    <hr style="margin-top: 0px" />
+                    <hr />
                 </div>
                 <div class="param-field">
                     <label>func</label>
@@ -42,7 +42,7 @@
             <div class="params-panel">
                 <div style="color: #555; font-weight: bold">
                     Training
-                    <hr style="margin-top: 0px" />
+                    <hr />
                 </div>
                 <div class="param-field">
                     <label>lr</label>
@@ -57,7 +57,7 @@
             <div class="params-panel">
                 <div style="color: #555; font-weight: bold">
                     Charts Visibility
-                    <hr style="margin-top: 0px" />
+                    <hr />
                 </div>
                 <div v-for="(value, key) in chartsVisible" :key="key">
                     <div class="param-field">
