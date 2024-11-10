@@ -19,11 +19,20 @@
                 </div>
                 <div class="param-field">
                     <label>func</label>
-                    <input type="text" v-model="taskConfig.dataset.name" />
+<!--                    <input type="text" v-model="taskConfig.dataset.name" />-->
+                    <select v-model="taskConfig.dataset.name">
+                        <option value="generate_2d_classification_circle">2D Classification (Circle)</option>
+                        <option value="generate_2d_classification_exclusive_or">2D Classification (XOR)</option>
+                        <option value="generate_2d_classification_example_scatter">2D Classification (Scatter)</option>
+                        <option value="generate_1d_regression_with_function">1D Regression (Non-linear function)</option>
+                    </select>
                 </div>
                 <div class="param-field">
                     <label>proc</label>
-                    <input type="text" v-model="taskConfig.dataset.proc" />
+<!--                    <input type="text" v-model="taskConfig.dataset.proc" />-->
+                    <select v-model="taskConfig.dataset.proc">
+                        <option value="label_split_for_single_output_dataset">Single Output Splitter</option>
+                    </select>
                 </div>
                 <div class="param-field">
                     <label>N</label>
@@ -43,6 +52,14 @@
                 <div style="color: #555; font-weight: bold">
                     Training
                     <hr />
+                </div>
+                <div class="param-field">
+                    <label>optimizer</label>
+<!--                    <input type="text" v-model="taskConfig.optimizer.type" />-->
+                    <select v-model="taskConfig.optimizer.type">
+                        <option value="GD">Gradient Descent</option>
+                        <option value="Adam">Adam</option>
+                    </select>
                 </div>
                 <div class="param-field">
                     <label>lr</label>
@@ -321,25 +338,35 @@ export default {
     gap: 10px;
 }
 
-.param-field {
+.params-panel .param-field {
     display: flex;
     align-items: center;
 }
 
-.param-field label {
+.params-panel .param-field label {
     flex: 1;
     font-style: italic;
     color: #555;
 }
 
-.param-field input[type="number"], input[type="text"] {
+.params-panel .param-field input[type="number"], input[type="text"] {
     flex: 3;
     padding: 5px;
     border: none;
     border-radius: 8px;
     background-color: #fff;
     box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
-    width: 60%;
     text-align: right;
+}
+
+.params-panel .param-field select {
+    flex: 3;
+    padding: 4px;
+    border: none;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+    text-align: right;
+    padding-right: 24px;
 }
 </style>

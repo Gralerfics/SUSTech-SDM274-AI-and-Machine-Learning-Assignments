@@ -165,7 +165,6 @@ export default {
     border-radius: 8px;
     background-color: #fff;
     box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
-    width: 60%;
     text-align: right;
 }
 </style>
