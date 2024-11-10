@@ -215,13 +215,14 @@ class DashboardCore:
                 train_r2_buffer.append(train_r2)
 
                 # record testing loss and accuracy
-                test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
-                test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
-                test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
-                test_r2 = eval_regression_r2(test_prediction, self.test_dataset.datas[1])
-                test_loss_buffer.append(test_loss)
-                test_accuracy_buffer.append(test_accuracy)
-                test_r2_buffer.append(test_r2)
+                if self.test_dataset.datas[0].shape[0] > 0:
+                    test_prediction = self.model(Variable(self.test_dataset.datas[0], derivable = True))
+                    test_loss = self.loss(test_prediction, self.test_dataset.datas[1])
+                    test_accuracy = eval_binary_accuracy(test_prediction, self.test_dataset.datas[1])
+                    test_r2 = eval_regression_r2(test_prediction, self.test_dataset.datas[1])
+                    test_loss_buffer.append(test_loss)
+                    test_accuracy_buffer.append(test_accuracy)
+                    test_r2_buffer.append(test_r2)
 
                 # message update
                 self.update_msg_buffer({
