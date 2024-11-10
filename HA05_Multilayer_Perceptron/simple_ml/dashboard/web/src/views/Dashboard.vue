@@ -204,22 +204,35 @@ export default {
                 //     { type: 'ReLU' },
                 //     { type: 'Linear', params: { in_dim: 2, out_dim: 1 } }
                 // ],
+                // model: [
+                //     { type: 'Linear', params: { in_dim: 1, out_dim: 7 } },
+                //     { type: 'Sigmoid' },
+                //     { type: 'Linear', params: { in_dim: 7, out_dim: 13 } },
+                //     { type: 'Sigmoid' },
+                //     { type: 'Linear', params: { in_dim: 13, out_dim: 1 } }
+                // ],
+                // dataset: {
+                //     type: 'builtin',
+                //     name: 'generate_1d_regression_with_function',
+                //     params: {
+                //         N: 1000,
+                //         noise: 0.2
+                //     },
+                //     proc: 'label_split_for_single_output_dataset',
+                //     test_ratio: 0.2,
+                //     batch_size: 10
+                // },
                 model: [
-                    { type: 'Linear', params: { in_dim: 1, out_dim: 7 } },
-                    { type: 'Sigmoid' },
-                    { type: 'Linear', params: { in_dim: 7, out_dim: 13 } },
-                    { type: 'Sigmoid' },
-                    { type: 'Linear', params: { in_dim: 13, out_dim: 1 } }
+                    { type: 'Linear', params: { in_dim: 2, out_dim: 20 } },
+                    { type: 'Tanh' },
+                    { type: 'Linear', params: { in_dim: 20, out_dim: 1 } }
                 ],
                 dataset: {
                     type: 'builtin',
-                    name: 'generate_1d_regression_with_function',
-                    params: {
-                        N: 1000,
-                        noise: 0.2
-                    },
+                    name: 'generate_2d_classification_example_scatter',
+                    params: {},
                     proc: 'label_split_for_single_output_dataset',
-                    test_ratio: 0.2,
+                    test_ratio: 0,
                     batch_size: 10
                 },
                 loss: {

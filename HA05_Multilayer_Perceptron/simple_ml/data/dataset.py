@@ -107,6 +107,8 @@ def split_train_and_test_dataset(dataset, test_ratio = 0.2, seed = None):
     np.random.shuffle(indices)
 
     split_index = int(N * (1 - test_ratio))
+    if split_index == N:
+        split_index -= 1
     train_indices, test_indices = indices[:split_index], indices[split_index:]
 
     train_dataset = Dataset(data = data_raw[train_indices], preprocess_func = preprocess_func)
