@@ -1,6 +1,11 @@
 <template>
-    <div class="epoch-indicator">
-        {{ formattedEpoch }}
+    <div>
+        <div style="color: #969696">
+            Epoch
+        </div>
+        <div class="epoch-indicator">
+            {{ formattedEpoch }}
+        </div>
     </div>
 </template>
 

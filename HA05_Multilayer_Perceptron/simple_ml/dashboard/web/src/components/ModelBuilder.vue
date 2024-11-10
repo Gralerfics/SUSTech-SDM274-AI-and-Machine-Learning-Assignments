@@ -93,7 +93,7 @@ export default {
 .model-builder {
     display: flex;
     flex-direction: column;
-    width: 600px;
+    width: 100%;
     border: 1px solid #ccc;
 }
 
