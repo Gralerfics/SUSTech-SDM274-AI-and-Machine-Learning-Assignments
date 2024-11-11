@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from simple_ml import Variable, Dataset, DataIterator, merge_datasets, split_train_and_test_dataset, split_k_fold_cross_validation_dataset
-from simple_ml.data.samples import label_split_for_single_output_dataset, generate_2d_classification_circle, generate_2d_classification_exclusive_or
-from simple_ml.evaluation.criterion import eval_binary_accuracy, eval_binary_recall, eval_binary_precision, eval_binary_f1_score
+from simple_ml.data.samples import label_split_for_single_output_dataset, generate_2d_classification_circle, generate_2d_classification_exclusive_or, generate_1d_regression_with_function
+from simple_ml.evaluation.criterion import eval_binary_accuracy, eval_binary_recall, eval_binary_precision, eval_binary_f1_score, eval_regression_r2
 from simple_ml.model import Model, Sequential
 from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
 from simple_ml.training.loss import MSELoss, CrossEntropyLoss
@@ -13,27 +13,30 @@ from simple_ml.visualization.plot import TwoFeaturesClassificationModelVisualize
 
 
 """ Dataset """
-data_np = generate_2d_classification_circle(N = 1000)
+# data_np = generate_2d_classification_circle(N = 400, r_0 = 3, r_1 = 3, noise = 0.8)
 # data_np = generate_2d_classification_exclusive_or(N = 1000)
+data_np = generate_1d_regression_with_function(N = 1000, f = lambda x: np.cos(x) + np.exp(-x ** 2) + x ** 3 / 233, x_range = (-10, 10), noise = 0.2)
 
 dataset = Dataset(data = data_np, preprocess_func = label_split_for_single_output_dataset)
 train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
 
 
+# 1,20,20,1,sig,gd0d01,8000ep,func1000,cv5
+
 """ Model """
 model = Sequential([
-    Linear(2, 4),
+    Linear(1, 20),
     Sigmoid(),
-    Linear(4, 2),
+    Linear(20, 20),
     Sigmoid(),
-    Linear(2, 1)
+    Linear(20, 1)
 ])
 
 loss_func = MSELoss()
 # loss_func = CrossEntropyLoss() # the output of the model should be in (0, 1), i.e. Sigmoid
 
-# optimizer = GD(model.params, lr = 0.01)
-optimizer = Adam(model.params, lr = 0.003)
+optimizer = GD(model.params, lr = 0.01)
+# optimizer = Adam(model.params, lr = 0.003)
 
 
 """ Cross-Validation & Training """
@@ -45,8 +48,9 @@ accuracies = []
 recalls = []
 precisions = []
 f1_scores = []
+r2s = []
 
-epoch_num = 100
+epoch_num = 4000
 
 for i in range(K + 1):
     if i < K:
@@ -75,17 +79,43 @@ for i in range(K + 1):
     # evaluate on validation/testing set
     prediction = model(Variable(valid_ds.datas[0], derivable = True))
 
-    losses.append(loss_func(prediction, valid_ds.datas[1]))
-    accuracies.append(eval_binary_accuracy(prediction, valid_ds.datas[1]))
-    recalls.append(eval_binary_recall(prediction, valid_ds.datas[1]))
-    precisions.append(eval_binary_precision(prediction, valid_ds.datas[1]))
-    f1_scores.append(eval_binary_f1_score(prediction, valid_ds.datas[1]))
+    loss = loss_func(prediction, valid_ds.datas[1])
+    # accuracy = eval_binary_accuracy(prediction, valid_ds.datas[1])
+    # recall = eval_binary_recall(prediction, valid_ds.datas[1])
+    # precision = eval_binary_precision(prediction, valid_ds.datas[1])
+    # f1_score = eval_binary_f1_score(prediction, valid_ds.datas[1])
+    r2 = eval_regression_r2(prediction, valid_ds.datas[1])
 
-categories = ["Loss", "Accuracy", "Recall", "Precision", "F1 Score"]
-validation_results = [losses[:-1], accuracies[:-1], recalls[:-1], precisions[:-1], f1_scores[:-1]]
+    # if i < K:
+    #     print(f"[Info] Performance for fold {i + 1} / {K}: Loss = {loss}, Accuracy = {accuracy}, Recall = {recall}, Precision = {precision}, F1 Score = {f1_score}")
+    # else:
+    #     print(f"[Info] Performance on test set: Loss = {loss}, Accuracy = {accuracy}, Recall = {recall}, Precision = {precision}, F1 Score = {f1_score}")
+
+    if i < K:
+        print(f"[Info] Performance for fold {i + 1} / {K}: Loss = {loss}, R2 = {r2}")
+    else:
+        print(f"[Info] Performance on test set: Loss = {loss}, R2 = {r2}")
+
+    losses.append(loss)
+    # accuracies.append(accuracy)
+    # recalls.append(recall)
+    # precisions.append(precision)
+    # f1_scores.append(f1_score)
+    r2s.append(r2)
+    
+
+# categories = ["Loss", "Accuracy", "Recall", "Precision", "F1 Score"]
+# validation_results = [losses[:-1], accuracies[:-1], recalls[:-1], precisions[:-1], f1_scores[:-1]]
+# test_results = [losses[-1], accuracies[-1], recalls[-1], precisions[-1], f1_scores[-1]]
+categories = ["Loss", "R2"]
+validation_results = [losses[:-1], r2s[:-1]]
+test_results = [losses[-1], r2s[-1]]
+
 averages = [np.mean(val) for val in validation_results]
-test_results = [losses[-1], accuracies[-1], recalls[-1], precisions[-1], f1_scores[-1]]
+# print(f"[Info] Average performance on validation folds: Loss = {averages[0]}, Accuracy = {averages[1]}, Recall = {averages[2]}, Precision = {averages[3]}, F1 Score = {averages[4]}")
+print(f"[Info] Average performance on validation folds: Loss = {averages[0]}, R2 = {averages[1]}")
 
+bar_colors = ['#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF6820', '#544943']
 bar_colors = ['#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF6820', '#544943']
 bar_width = 0.1
 bar_positions = np.arange(len(categories))

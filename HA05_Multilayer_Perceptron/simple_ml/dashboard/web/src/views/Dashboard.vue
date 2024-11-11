@@ -191,7 +191,10 @@ export default {
                 //     type: 'builtin',
                 //     name: 'generate_2d_classification_circle',
                 //     params: {
-                //         N: 500
+                //         N: 400,
+                //         noise: 0.8,
+                //         r_0: 3,
+                //         r_1: 3
                 //     },
                 //     proc: 'label_split_for_single_output_dataset',
                 //     test_ratio: 0.2,
@@ -199,42 +202,47 @@ export default {
                 // },
                 // model: [
                 //     { type: 'Linear', params: { in_dim: 2, out_dim: 4 } },
-                //     { type: 'Sigmoid' },
+                //     { type: 'ReLU' },
                 //     { type: 'Linear', params: { in_dim: 4, out_dim: 2 } },
                 //     { type: 'ReLU' },
                 //     { type: 'Linear', params: { in_dim: 2, out_dim: 1 } }
                 // ],
                 // model: [
-                //     { type: 'Linear', params: { in_dim: 1, out_dim: 7 } },
+                //     { type: 'Linear', params: { in_dim: 1, out_dim: 5 } },
                 //     { type: 'Sigmoid' },
-                //     { type: 'Linear', params: { in_dim: 7, out_dim: 13 } },
+                //     { type: 'Linear', params: { in_dim: 5, out_dim: 7 } },
                 //     { type: 'Sigmoid' },
-                //     { type: 'Linear', params: { in_dim: 13, out_dim: 1 } }
+                //     { type: 'Linear', params: { in_dim: 7, out_dim: 1 } }
                 // ],
-                // dataset: {
-                //     type: 'builtin',
-                //     name: 'generate_1d_regression_with_function',
-                //     params: {
-                //         N: 1000,
-                //         noise: 0.2
-                //     },
-                //     proc: 'label_split_for_single_output_dataset',
-                //     test_ratio: 0.2,
-                //     batch_size: 10
-                // },
                 model: [
-                    { type: 'Linear', params: { in_dim: 2, out_dim: 20 } },
-                    { type: 'Tanh' },
-                    { type: 'Linear', params: { in_dim: 20, out_dim: 1 } }
+                    { type: 'Linear', params: { in_dim: 1, out_dim: 11 } },
+                    { type: 'Sigmoid' },
+                    { type: 'Linear', params: { in_dim: 11, out_dim: 1 } }
                 ],
                 dataset: {
                     type: 'builtin',
-                    name: 'generate_2d_classification_example_scatter',
-                    params: {},
+                    name: 'generate_1d_regression_with_function',
+                    params: {
+                        N: 1000,
+                        noise: 0.2
+                    },
                     proc: 'label_split_for_single_output_dataset',
-                    test_ratio: 0,
+                    test_ratio: 0.2,
                     batch_size: 10
                 },
+                // model: [
+                //     { type: 'Linear', params: { in_dim: 2, out_dim: 20 } },
+                //     { type: 'Tanh' },
+                //     { type: 'Linear', params: { in_dim: 20, out_dim: 1 } }
+                // ],
+                // dataset: {
+                //     type: 'builtin',
+                //     name: 'generate_2d_classification_example_scatter',
+                //     params: {},
+                //     proc: 'label_split_for_single_output_dataset',
+                //     test_ratio: 0,
+                //     batch_size: 10
+                // },
                 loss: {
                     type: 'MSELoss',
                     params: {}

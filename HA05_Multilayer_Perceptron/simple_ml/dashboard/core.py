@@ -245,9 +245,9 @@ class DashboardCore:
 
                 # next epoch
                 self.epoch += 1
-        # except Exception as e:
-        #     print('[Error] Something went wrong')
-        #     print(e)
+        except Exception as e:
+            print('[Error] Something went wrong')
+            print(e)
         finally:
             # destroy the task
             self.train_dataset = None

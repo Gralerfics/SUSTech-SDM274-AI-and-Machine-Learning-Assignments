@@ -13,8 +13,8 @@ def generate_2d_classification_circle(N = 500, r_0 = 2.3, r_1 = 3.5, r_2 = 5, no
 
     angles = np.random.uniform(-np.pi, np.pi, (N, 1))
     dists = np.r_[
-        np.random.uniform(0, r_0, (N_in, 1)),
-        np.random.uniform(r_1, r_2, (N - N_in, 1))
+        np.random.uniform(0, r_0, (N_in, 1)) + np.random.normal(0, noise, (N_in, 1)),
+        np.random.uniform(r_1, r_2, (N - N_in, 1)) + np.random.normal(0, noise, (N - N_in, 1))
     ]
     coords = np.c_[np.cos(angles), np.sin(angles)] * dists
 
