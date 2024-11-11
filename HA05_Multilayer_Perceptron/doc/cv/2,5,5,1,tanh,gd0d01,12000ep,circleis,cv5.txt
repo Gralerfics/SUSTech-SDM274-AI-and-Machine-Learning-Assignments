@@ -1,0 +1,13 @@
+[Info] Training on cross-validation fold 1 / 5
+[Info] Performance for fold 1 / 5: Loss = 0.25601411225231724, Accuracy = 0.84375, Recall = 0.8275862068965517, Precision = 0.8275862068965517, F1 Score = 0.8275862068965517
+[Info] Training on cross-validation fold 2 / 5
+[Info] Performance for fold 2 / 5: Loss = 0.2450894829187415, Accuracy = 0.84375, Recall = 0.75, Precision = 0.9230769230769231, F1 Score = 0.8275862068965517
+[Info] Training on cross-validation fold 3 / 5
+[Info] Performance for fold 3 / 5: Loss = 0.15846603602661666, Accuracy = 0.890625, Recall = 0.8571428571428571, Precision = 0.8888888888888888, F1 Score = 0.8727272727272727
+[Info] Training on cross-validation fold 4 / 5
+[Info] Performance for fold 4 / 5: Loss = 0.18017292038529148, Accuracy = 0.890625, Recall = 0.8947368421052632, Precision = 0.918918918918919, F1 Score = 0.9066666666666667
+[Info] Training on cross-validation fold 5 / 5
+[Info] Performance for fold 5 / 5: Loss = 0.317979192398566, Accuracy = 0.703125, Recall = 0.6774193548387096, Precision = 0.7, F1 Score = 0.6885245901639343
+[Info] Training on whole training set
+[Info] Performance on test set: Loss = 0.2575008756313008, Accuracy = 0.85, Recall = 0.9047619047619048, Precision = 0.8260869565217391, F1 Score = 0.8636363636363636
+[Info] Average performance on validation folds: Loss = 0.23154434879630656, Accuracy = 0.834375, Recall = 0.8013770521966764, Precision = 0.8516941875562566, F1 Score = 0.8246181886701954

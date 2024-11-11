@@ -1,0 +1,13 @@
+[Info] Training on cross-validation fold 1 / 5
+[Info] Performance for fold 1 / 5: Loss = 0.18147757609322338, R2 = 0.9050558900614434
+[Info] Training on cross-validation fold 2 / 5
+[Info] Performance for fold 2 / 5: Loss = 0.04747779696203082, R2 = 0.9727874184107681
+[Info] Training on cross-validation fold 3 / 5
+[Info] Performance for fold 3 / 5: Loss = 0.041641259846136015, R2 = 0.9777060237870616
+[Info] Training on cross-validation fold 4 / 5
+[Info] Performance for fold 4 / 5: Loss = 0.05126796981778586, R2 = 0.9701410854016169
+[Info] Training on cross-validation fold 5 / 5
+[Info] Performance for fold 5 / 5: Loss = 0.04697239272320186, R2 = 0.9744757439381541
+[Info] Training on whole training set
+[Info] Performance on test set: Loss = 0.054597254305259336, R2 = 0.9671748510677958
+[Info] Average performance on validation folds: Loss = 0.0737673990884756, R2 = 0.9600332323198089

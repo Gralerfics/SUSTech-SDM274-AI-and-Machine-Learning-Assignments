@@ -489,7 +489,7 @@ The function I chose was `np.cos(x) + np.exp(-x ** 2) + x ** 3 / 233`, with the 
 
 ![](func_data.png)
 
-TODO
+Splitting the dataset and then training and evaluating it separately, the code is as follows (modifying the parameters to obtain different results):
 
 ```python
 import numpy as np
@@ -532,10 +532,6 @@ K = 5
 datasets = split_k_fold_cross_validation_dataset(train_dataset, k = K)
 
 losses = []
-accuracies = []
-recalls = []
-precisions = []
-f1_scores = []
 r2s = []
 
 epoch_num = 4000
@@ -604,9 +600,170 @@ plt.legend()
 plt.show()
 ```
 
+Due to time constraints, a detailed hyperparameter search was not performed, but rather some of the characterised model structures were selected for testing, expressed in terms of the number of neurons and type of activation function in each layer (including the input layer), as `1,10,1,sig`, `1,20,1,sig`, `1,30,1,sig`, `1,5,5,1,sig`, `1,10, 10,1,sig`, `1,5,5,5,1,sig`, `1,10,10,10,1,sig`. For this one-dimensional regression problem we use R2 as an evaluation criterion. Where the results for `1,5,5,5,1,sig` are visualised as follows:
+
+![](cv/1,5,5,5,1,sig,gd0d01,8000ep,func1000,cv5.png)
+
+As well as `1,20,1,sig`'s:
+
+![](cv/1,20,1,sig,gd0d01,4000ep,func1000,cv5.png)
+
+Other charts (and records of specific values) are not listed, see `doc/cv/`. The average performance on the validation set for each case is tabulated below:
+
+| Model Structure | Loss | R2 |
+| --- | --- | --- |
+| 1,10,1,sig | 0.3478 | 0.7801 |
+| 1,20,1,sig | 0.0609 | 0.9638 |
+| 1,30,1,sig | 0.0738 | 0.9600 |
+| 1,5,5,1,sig | 0.1914 | 0.8857 |
+| 1,10,10,1,sig | 0.1355 | 0.9229 |
+| 1,5,5,5,1,sig | 0.5346 | 0.6768 |
+| 1,10,10,10,1,sig | 0.1996 | 0.8799 |
+
+Looking at the values, the best performance is `1,20,1,sig`, i.e. a hidden layer using a layer of 20 neurons. For the same hidden layer, the performance of `1,10,1,sig` with fewer neurons and `1,30,1,sig` with more neurons declined, with the former possibly underfitting and the latter possibly overfitting. The overall performance of the multi-hidden layer structure is not as good as that of the single hidden layer, while `1,10,10,1,sig` outperforms `1,5,5,1,sig` for the same number of layers. The special case of `1,10,10,10,10,1,sig` performance is due to the two hidden layers, which may be affected by some other factors, such as slower training leading to earlier stopping, random validation process leading to the results of, etc. In conclusion, this experiment is rather rough and can only give general conclusions, the specific hyperparameter search requires more time and computational resources.
+
 #### Two-feature Binary Classification
 
-TODO
+The experimental task was the same as above, except that the dataset was replaced with a binary classification problem with two-dimensional features. I chose a dataset similar to the distribution of concentric circles, with one class of points inside the inner circle and the other class of points on an outer circle, and generated the dataset by adding Gaussian noise so that the two classes of points overlap to some extent. The general look of the dataset is as follows:
+
+![](c_data.png)
+
+Similarly, the dataset is split and then trained and evaluated separately with the following code:
+
+```python
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from simple_ml import Variable, Dataset, DataIterator, merge_datasets, split_train_and_test_dataset, split_k_fold_cross_validation_dataset
+from simple_ml.data.samples import label_split_for_single_output_dataset, generate_2d_classification_circle, generate_2d_classification_exclusive_or, generate_1d_regression_with_function
+from simple_ml.evaluation.criterion import eval_binary_accuracy, eval_binary_recall, eval_binary_precision, eval_binary_f1_score, eval_regression_r2
+from simple_ml.model import Model, Sequential
+from simple_ml.model.layers import Linear, ReLU, Sigmoid, Tanh
+from simple_ml.training.loss import MSELoss, CrossEntropyLoss
+from simple_ml.training.optimizer import GD, Adam
+from simple_ml.visualization.plot import TwoFeaturesClassificationModelVisualizer
+
+
+""" Dataset """
+data_np = generate_2d_classification_circle(N = 400, r_0 = 3, r_1 = 3, noise = 0.8)
+
+dataset = Dataset(data = data_np, preprocess_func = label_split_for_single_output_dataset)
+train_dataset, test_dataset = split_train_and_test_dataset(dataset, 0.2)
+
+
+""" Model """
+model = Sequential([
+    Linear(2, 30),
+    Tanh(),
+    Linear(30, 30),
+    Tanh(),
+    Linear(30, 1)
+])
+
+loss_func = MSELoss()
+
+optimizer = GD(model.params, lr = 0.01)
+
+
+""" Cross-Validation & Training """
+K = 5
+datasets = split_k_fold_cross_validation_dataset(train_dataset, k = K)
+
+losses = []
+accuracies = []
+recalls = []
+precisions = []
+f1_scores = []
+
+epoch_num = 12000
+
+for i in range(K + 1):
+    if i < K:
+        print(f"[Info] Training on cross-validation fold {i + 1} / {K}")
+    else:
+        print(f"[Info] Training on whole training set")
+
+    # prepare train and validation set
+    if i < K:
+        train_ds = merge_datasets([datasets[j] for j in range(K) if j != i])
+        valid_ds = datasets[i]
+    else:
+        train_ds = train_dataset
+        valid_ds = test_dataset
+    train_iter_kfold = DataIterator(train_ds, batch_size = 10, shuffle = True, cyclic = False)
+
+    # train
+    for epoch in range(epoch_num):
+        for batch, [features, labels] in enumerate(train_iter_kfold):
+            prediction = model(Variable(features, derivable = True)) # must be wrapped by Variable
+            loss = loss_func(prediction, labels) # calculate loss and gradient (!)
+
+            model.backward()
+            optimizer.step()
+
+    # evaluate on validation/testing set
+    prediction = model(Variable(valid_ds.datas[0], derivable = True))
+
+    loss = loss_func(prediction, valid_ds.datas[1])
+    accuracy = eval_binary_accuracy(prediction, valid_ds.datas[1])
+    recall = eval_binary_recall(prediction, valid_ds.datas[1])
+    precision = eval_binary_precision(prediction, valid_ds.datas[1])
+    f1_score = eval_binary_f1_score(prediction, valid_ds.datas[1])
+
+    if i < K:
+        print(f"[Info] Performance for fold {i + 1} / {K}: Loss = {loss}, Accuracy = {accuracy}, Recall = {recall}, Precision = {precision}, F1 Score = {f1_score}")
+    else:
+        print(f"[Info] Performance on test set: Loss = {loss}, Accuracy = {accuracy}, Recall = {recall}, Precision = {precision}, F1 Score = {f1_score}")
+    
+    losses.append(loss)
+    accuracies.append(accuracy)
+    recalls.append(recall)
+    precisions.append(precision)
+    f1_scores.append(f1_score)
+    
+
+categories = ["Loss", "Accuracy", "Recall", "Precision", "F1 Score"]
+validation_results = [losses[:-1], accuracies[:-1], recalls[:-1], precisions[:-1], f1_scores[:-1]]
+test_results = [losses[-1], accuracies[-1], recalls[-1], precisions[-1], f1_scores[-1]]
+
+averages = [np.mean(val) for val in validation_results]
+print(f"[Info] Average performance on validation folds: Loss = {averages[0]}, Accuracy = {averages[1]}, Recall = {averages[2]}, Precision = {averages[3]}, F1 Score = {averages[4]}")
+
+bar_colors = ['#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF6820', '#544943']
+bar_colors = ['#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF8F31', '#FF6820', '#544943']
+bar_width = 0.1
+bar_positions = np.arange(len(categories))
+
+plt.figure(figsize = (12, 6))
+for i in range(K):
+    plt.bar(bar_positions + i * bar_width, [val[i] for val in validation_results], width = bar_width, label = f'Validation Fold {i + 1}', color = bar_colors[i])
+plt.bar(bar_positions + K * bar_width, averages, width = bar_width, label = 'Validation Average', color = bar_colors[K])
+plt.bar(bar_positions + (K + 1) * bar_width, test_results, width = bar_width, label = 'Test', color = bar_colors[K + 1])
+
+plt.xlabel('Metrics')
+plt.ylabel('Values')
+plt.xticks(bar_positions + (K + 1) * bar_width / 2, categories)
+plt.legend()
+plt.show()
+```
+
+Similarly, I tested `2,5,1,sig`, `2,10,1,sig`, `2,20,1,sig`, `2,5,5,1,tanh`, `2,10,10,1,tanh` and `2,30,30,1,tanh`. For the classification problem we use the metrics Accuracy, Recall, Precision and F1 Score and in the following comparisons we mainly use the comprehensive F1 Score for judgement. For example the result for `2,10,1,sig` is visualised as:
+
+![](cv/2,10,1,sig,gd0d01,12000ep,circleis,cv5.png)
+
+Again, the others are listed using the table:
+
+| Model Structure | Loss | F1 Score |
+| --- | --- | --- |
+| 2,5,1,sig | 0.2345 | 0.8328 |
+| 2,10,1,sig | 0.1977 | 0.8808 |
+| 2,20,1,sig | 0.1932 | 0.8684 |
+| 2,5,5,1,tanh | 0.2315 | 0.8246 |
+| 2,10,10,1,tanh | 0.2458 | 0.8043 |
+| 2,30,30,1,tanh | 0.2930 | 0.7899 |
+
+From the above table it can be observed that `2,10,1,sig` performs best. The overall performance of the single hidden layer is better than the double hidden layer (the experiment replaced the activation function, which may have some effect, not too rigorous). For the same one hidden layer, too many or too few neurons resulted in lower average performance. For the same two hidden layers, 5 neurons per layer is sufficient, any more and the performance drops, suggesting that the problem is simpler and does not require a more complex network.
 
 #### Supplement: Demonstration of the Effect of Hidden Layers on Fitting Ability (Slides P14)
 

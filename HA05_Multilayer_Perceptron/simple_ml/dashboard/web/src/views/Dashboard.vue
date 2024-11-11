@@ -187,26 +187,26 @@ export default {
         return {
             isWebsocketConnected: false,
             taskConfig: {
-                // dataset: {
-                //     type: 'builtin',
-                //     name: 'generate_2d_classification_circle',
-                //     params: {
-                //         N: 400,
-                //         noise: 0.8,
-                //         r_0: 3,
-                //         r_1: 3
-                //     },
-                //     proc: 'label_split_for_single_output_dataset',
-                //     test_ratio: 0.2,
-                //     batch_size: 10
-                // },
-                // model: [
-                //     { type: 'Linear', params: { in_dim: 2, out_dim: 4 } },
-                //     { type: 'ReLU' },
-                //     { type: 'Linear', params: { in_dim: 4, out_dim: 2 } },
-                //     { type: 'ReLU' },
-                //     { type: 'Linear', params: { in_dim: 2, out_dim: 1 } }
-                // ],
+                dataset: {
+                    type: 'builtin',
+                    name: 'generate_2d_classification_circle',
+                    params: {
+                        N: 400,
+                        noise: 0.8,
+                        r_0: 3,
+                        r_1: 3
+                    },
+                    proc: 'label_split_for_single_output_dataset',
+                    test_ratio: 0.2,
+                    batch_size: 10
+                },
+                model: [
+                    { type: 'Linear', params: { in_dim: 2, out_dim: 4 } },
+                    { type: 'ReLU' },
+                    { type: 'Linear', params: { in_dim: 4, out_dim: 2 } },
+                    { type: 'ReLU' },
+                    { type: 'Linear', params: { in_dim: 2, out_dim: 1 } }
+                ],
                 // model: [
                 //     { type: 'Linear', params: { in_dim: 1, out_dim: 5 } },
                 //     { type: 'Sigmoid' },
@@ -214,22 +214,22 @@ export default {
                 //     { type: 'Sigmoid' },
                 //     { type: 'Linear', params: { in_dim: 7, out_dim: 1 } }
                 // ],
-                model: [
-                    { type: 'Linear', params: { in_dim: 1, out_dim: 11 } },
-                    { type: 'Sigmoid' },
-                    { type: 'Linear', params: { in_dim: 11, out_dim: 1 } }
-                ],
-                dataset: {
-                    type: 'builtin',
-                    name: 'generate_1d_regression_with_function',
-                    params: {
-                        N: 1000,
-                        noise: 0.2
-                    },
-                    proc: 'label_split_for_single_output_dataset',
-                    test_ratio: 0.2,
-                    batch_size: 10
-                },
+                // model: [
+                //     { type: 'Linear', params: { in_dim: 1, out_dim: 11 } },
+                //     { type: 'Sigmoid' },
+                //     { type: 'Linear', params: { in_dim: 11, out_dim: 1 } }
+                // ],
+                // dataset: {
+                //     type: 'builtin',
+                //     name: 'generate_1d_regression_with_function',
+                //     params: {
+                //         N: 1000,
+                //         noise: 0.2
+                //     },
+                //     proc: 'label_split_for_single_output_dataset',
+                //     test_ratio: 0.2,
+                //     batch_size: 10
+                // },
                 // model: [
                 //     { type: 'Linear', params: { in_dim: 2, out_dim: 20 } },
                 //     { type: 'Tanh' },
