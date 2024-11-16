@@ -113,8 +113,6 @@ class DecisionTree:
         return ''
 
 
-
-
 if __name__ == '__main__':
 
     data = np.loadtxt('./lenses/lenses.data', dtype=int)
@@ -124,5 +122,3 @@ if __name__ == '__main__':
     dt01 = DT.DecisionTree()
     dt01.train(X,y)
           
-
-
