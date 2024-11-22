@@ -1,0 +1,8 @@
+# Tips on simple_ml in this folder
+
+Copied from HA05_Multilayer_Perceptron/simple_ml, which is archived and will not be modified;
+
+Added some components like `Perceptron`;
+
+Removed some components like `dashboard`;
+
