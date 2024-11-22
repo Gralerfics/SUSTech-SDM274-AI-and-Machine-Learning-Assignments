@@ -99,16 +99,22 @@ import matplotlib.pyplot as plt
 # data_csv['Machine failure'] = label_col
 
 """ 3. Power """
-data_csv['Power'] = data_csv[['Rotational speed [rpm]', 'Torque [Nm]']].product(axis = 1)
+data_csv['Power'] =
+    data_csv[['Rotational speed [rpm]', 'Torque [Nm]']].product(axis = 1)
 
 """ 4. Temperature Difference """
-# data_csv['Temperature Difference'] = data_csv['Process temperature [K]'] - data_csv['Air temperature [K]']
+# data_csv['Temperature Difference'] =
+#     data_csv['Process temperature [K]'] - data_csv['Air temperature [K]']
 
 """ 5. Strain """
-# data_csv['Strain'] = data_csv[['Tool wear [min]', 'Torque [Nm]']].product(axis = 1)
+# data_csv['Strain'] =
+#     data_csv[['Tool wear [min]', 'Torque [Nm]']].product(axis = 1)
 
 """ 6. Remove Raw """
-# data_csv.drop(columns = ['Process temperature [K]', 'Air temperature [K]', 'Tool wear [min]', 'Torque [Nm]'], inplace = True)
+# data_csv.drop(columns = [
+#     'Process temperature [K]', 'Air temperature [K]',
+#     'Tool wear [min]', 'Torque [Nm]'
+# ], inplace = True)
 
 """ Result """
 fN = len(data_csv.columns) - 1 # features number
@@ -145,10 +151,15 @@ Note that to prevent the random division from being unbalanced, we write a new f
 from simple_ml.data.dataset import *
 from simple_ml.data.samples import *
 
-dataset = Dataset(data = data_np, preprocess_func = label_split_for_single_output_dataset)
-train_dataset_raw, test_dataset = split_train_and_test_dataset_with_equal_binary_label(dataset, 0.3, seed = 42)
+dataset = Dataset(
+    data = data_np,
+    preprocess_func = label_split_for_single_output_dataset
+)
+train_dataset_raw, test_dataset =
+    split_train_and_test_dataset_with_equal_binary_label(dataset, 0.3, seed = 42)
 
-print(np.sum(test_dataset.datas[1]) / (np.sum(train_dataset_raw.datas[1]) + np.sum(test_dataset.datas[1])))
+print(np.sum(test_dataset.datas[1]) / (np.sum(train_dataset_raw.datas[1]) +
+    np.sum(test_dataset.datas[1])))
 ```
 
 The implementation of the `split_train_and_test_dataset_with_equal_binary_label` function is as follows:
@@ -278,14 +289,16 @@ def linreg(optimizer, epoch_num, batch_size):
 
 
 optimizer = GD(None, lr = 0.0002)
-linreg(optimizer, epoch_num = 3000, batch_size = len(train_dataset_bal) // 20)
+linreg(optimizer,
+        epoch_num = 3000, batch_size = len(train_dataset_bal) // 20)
 ```
 
 The result is as follows:
 
 ```
 TP: 69, FP: 350, TN: 2549, FN: 33
-Test: ACC = 0.8723758747084305, REC = 0.6764705882352942, PRE = 0.16467780429594273, F1 = 0.2648752399232246
+Test: ACC = 0.8723758747084305, REC = 0.6764705882352942,
+        PRE = 0.16467780429594273, F1 = 0.2648752399232246
 ```
 
 ![linreg](./linreg.png)
@@ -365,12 +378,14 @@ def perceptron(optimizer, epoch_num, batch_size):
 
 
 optimizer = GD(None, lr = 0.02)
-perceptron(optimizer, epoch_num = 1000, batch_size = len(train_dataset_bal) // 100)
+perceptron(optimizer,
+        epoch_num = 1000, batch_size = len(train_dataset_bal) // 100)
 ```
 
 ```
 TP: 76, FP: 282, TN: 2617, FN: 26
-Test: ACC = 0.8973675441519493, REC = 0.7450980392156863, PRE = 0.2122905027932961, F1 = 0.3304347826086957
+Test: ACC = 0.8973675441519493, REC = 0.7450980392156863,
+        PRE = 0.2122905027932961, F1 = 0.3304347826086957
 ```
 
 ![perceptron](./perceptron.png)
@@ -425,14 +440,15 @@ def logreg(optimizer, epoch_num, batch_size):
 
 
 optimizer = GD(None, lr = 0.03)
-logreg(optimizer, epoch_num = 3000, batch_size = len(train_dataset_bal) // 50)
+logreg(optimizer,epoch_num = 3000, batch_size = len(train_dataset_bal) // 50)
 ```
 
 And here's the results:
 
 ```
 TP: 76, FP: 277, TN: 2622, FN: 26
-Test: ACC = 0.8990336554481839, REC = 0.7450980392156863, PRE = 0.21529745042492918, F1 = 0.33406593406593404
+Test: ACC = 0.8990336554481839, REC = 0.7450980392156863,
+        PRE = 0.21529745042492918, F1 = 0.33406593406593404
 ```
 
 ![logreg](./logreg.png)
@@ -487,14 +503,16 @@ model = Sequential([
 ])
 loss_func = CrossEntropyLoss()
 optimizer = GD(model.params, lr = 0.01)
-mlp(model, loss_func, optimizer, epoch_num = 3000, batch_size = len(train_dataset_bal) // 10)
+mlp(model, loss_func, optimizer,
+        epoch_num = 3000, batch_size = len(train_dataset_bal) // 10)
 ```
 
 And the result is:
 
 ```
 TP: 84, FP: 242, TN: 2657, FN: 18
-Test: ACC = 0.9133622125958014, REC = 0.8235294117647058, PRE = 0.25766871165644173, F1 = 0.3925233644859813
+Test: ACC = 0.9133622125958014, REC = 0.8235294117647058,
+        PRE = 0.25766871165644173, F1 = 0.3925233644859813
 ```
 
 ![mlp](./mlp.png)
@@ -527,12 +545,14 @@ model = Sequential([
 ])
 loss_func = CrossEntropyLoss()
 optimizer = GD(model.params, lr = 0.01)
-mlp(model, loss_func, optimizer, epoch_num = 10000, batch_size = len(train_dataset_bal) // 20)
+mlp(model, loss_func, optimizer,
+        epoch_num = 10000, batch_size = len(train_dataset_bal) // 20)
 ```
 
 ```
 TP: 79, FP: 225, TN: 2674, FN: 23
-Test: ACC = 0.9173608797067644, REC = 0.7745098039215687, PRE = 0.2598684210526316, F1 = 0.3891625615763547
+Test: ACC = 0.9173608797067644, REC = 0.7745098039215687,
+        PRE = 0.2598684210526316, F1 = 0.3891625615763547
 ```
 
 ![mlp_1](./mlp_1.png)
@@ -548,12 +568,14 @@ model = Sequential([
 ])
 loss_func = CrossEntropyLoss()
 optimizer = GD(model.params, lr = 0.01)
-mlp(model, loss_func, optimizer, epoch_num = 5000, batch_size = len(train_dataset_bal) // 20)
+mlp(model, loss_func, optimizer,
+        epoch_num = 5000, batch_size = len(train_dataset_bal) // 20)
 ```
 
 ```
 TP: 84, FP: 245, TN: 2654, FN: 18
-Test: ACC = 0.9123625458180606, REC = 0.8235294117647058, PRE = 0.2553191489361702, F1 = 0.38979118329466356
+Test: ACC = 0.9123625458180606, REC = 0.8235294117647058,
+        PRE = 0.2553191489361702, F1 = 0.38979118329466356
 ```
 
 ![mlp_2](./mlp_2.png)
@@ -569,12 +591,14 @@ model = Sequential([
 ])
 loss_func = CrossEntropyLoss()
 optimizer = GD(model.params, lr = 0.01)
-mlp(model, loss_func, optimizer, epoch_num = 20000, batch_size = len(train_dataset_bal) // 20)
+mlp(model, loss_func, optimizer,
+        epoch_num = 20000, batch_size = len(train_dataset_bal) // 20)
 ```
 
 ```
 TP: 83, FP: 194, TN: 2705, FN: 19
-Test: ACC = 0.9290236587804065, REC = 0.8137254901960784, PRE = 0.2996389891696751, F1 = 0.4379947229551451
+Test: ACC = 0.9290236587804065, REC = 0.8137254901960784,
+        PRE = 0.2996389891696751, F1 = 0.4379947229551451
 ```
 
 ![mlp_3](./mlp_3.png)
@@ -592,12 +616,14 @@ model = Sequential([
 ])
 loss_func = CrossEntropyLoss()
 optimizer = GD(model.params, lr = 0.01)
-mlp(model, loss_func, optimizer, epoch_num = 5000, batch_size = len(train_dataset_bal) // 20)
+mlp(model, loss_func, optimizer,
+        epoch_num = 5000, batch_size = len(train_dataset_bal) // 20)
 ```
 
 ```
 TP: 80, FP: 253, TN: 2646, FN: 22
-Test: ACC = 0.9083638787070977, REC = 0.7843137254901961, PRE = 0.24024024024024024, F1 = 0.367816091954023
+Test: ACC = 0.9083638787070977, REC = 0.7843137254901961,
+        PRE = 0.24024024024024024, F1 = 0.367816091954023
 ```
 
 ![mlp_4](./mlp_4.png)
@@ -615,12 +641,14 @@ model = Sequential([
 ])
 loss_func = CrossEntropyLoss()
 optimizer = GD(model.params, lr = 0.01)
-mlp(model, loss_func, optimizer, epoch_num = 40000, batch_size = len(train_dataset_bal) // 30)
+mlp(model, loss_func, optimizer,
+        epoch_num = 40000, batch_size = len(train_dataset_bal) // 30)
 ```
 
 ```
 TP: 80, FP: 162, TN: 2737, FN: 22
-Test: ACC = 0.9386871042985672, REC = 0.7843137254901961, PRE = 0.3305785123966942, F1 = 0.46511627906976744
+Test: ACC = 0.9386871042985672, REC = 0.7843137254901961,
+        PRE = 0.3305785123966942, F1 = 0.46511627906976744
 ```
 
 ![mlp_5](./mlp_5.png)
@@ -640,12 +668,14 @@ model = Sequential([
 ])
 loss_func = CrossEntropyLoss()
 optimizer = GD(model.params, lr = 0.01)
-mlp(model, loss_func, optimizer, epoch_num = 20000, batch_size = len(train_dataset_bal) // 20)
+mlp(model, loss_func, optimizer,
+        epoch_num = 20000, batch_size = len(train_dataset_bal) // 20)
 ```
 
 ```
 TP: 81, FP: 248, TN: 2651, FN: 21
-Test: ACC = 0.9103632122625791, REC = 0.7941176470588235, PRE = 0.24620060790273557, F1 = 0.37587006960556846
+Test: ACC = 0.9103632122625791, REC = 0.7941176470588235,
+        PRE = 0.24620060790273557, F1 = 0.37587006960556846
 ```
 
 ![mlp_6](./mlp_6.png)
@@ -665,12 +695,14 @@ model = Sequential([
 ])
 loss_func = CrossEntropyLoss()
 optimizer = GD(model.params, lr = 0.01)
-mlp(model, loss_func, optimizer, epoch_num = 80000, batch_size = len(train_dataset_bal) // 30)
+mlp(model, loss_func, optimizer,
+        epoch_num = 80000, batch_size = len(train_dataset_bal) // 30)
 ```
 
 ```
 TP: 80, FP: 184, TN: 2715, FN: 22
-Test: ACC = 0.931356214595135, REC = 0.7843137254901961, PRE = 0.30303030303030304, F1 = 0.4371584699453552
+Test: ACC = 0.931356214595135, REC = 0.7843137254901961,
+        PRE = 0.30303030303030304, F1 = 0.4371584699453552
 ```
 
 ![mlp_7](./mlp_7.png)
