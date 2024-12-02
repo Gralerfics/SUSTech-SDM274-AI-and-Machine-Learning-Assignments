@@ -30,8 +30,10 @@ class Linear(Model):
                 ]
         """
         # self.W = Variable(np.random.randn(self.n, self.m), derivable = True)
+        # self.W = Variable(np.random.randn(self.n, self.m) * np.sqrt(1 / self.n), derivable = True)
         self.W = Variable(np.random.uniform(-0.5, 0.5, (self.n, self.m)), derivable = True)
         # self.b = Variable(np.random.randn(self.m), derivable = True)
+        # self.b = Variable(np.zeros(self.m), derivable = True)
         self.b = Variable(np.ones(self.m) * 0.1, derivable = True)
             # TODO: initial value selection?
         self.params = [self.W, self.b]
@@ -80,6 +82,7 @@ class ReLU(Model):
         """
             dE/dX = dE/dY * dY/dX = dE/dY * (X > 0)
         """
+        print(self.output.gradient.shape, self.output.value.shape)
         self.input.gradient = self.output.gradient * (self.output.value > 0)
 
 
@@ -126,29 +129,5 @@ class Tanh(Model): # TODO: to be checked
         """
             dE/dX = dE/dY * dY/dX = dE/dY * (1 - Y ** 2)
         """
-        self.input.gradient = self.output.gradient * (1 - self.output.value ** 2)
-
-
-class Softmax(Model): # TODO: to be checked
-    def __init__(self, x_left_bound = -100, x_right_bound = 100, epsilon = 1e-8):
-        super(Softmax, self).__init__()
-        self.x_left_bound = x_left_bound
-        self.x_right_bound = x_right_bound
-        self.epsilon = epsilon
-    
-    def forward(self, X):
-        super(Softmax, self).forward(X)
-        """
-            Y = exp(X) / Sum_{i=0}^{n-1} {exp(X_i)}
-        """
-        exp = np.exp(np.clip(X.value, self.x_left_bound, self.x_right_bound))
-        self.output = Variable(exp / np.sum(exp, axis = 1, keepdims = True), derivable = True)
-        return self.output
-    
-    def backward(self):
-        """
-            dE/dX = dE/dY * dY/dX = dE/dY * (diag(Y) - Y @ Y.T)
-        """
-        Y = self.output.value
-        self.input.gradient = self.output.gradient * (np.diag(Y) - Y[:, :, None] @ Y[:, None, :])   
+        self.input.gradient = self.output.gradient * (1 - self.output.value ** 2)  
 

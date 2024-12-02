@@ -65,7 +65,8 @@ class Linear(Model):
         N = X.value.shape[0]
         self.W.gradient = X.value.T @ Y.gradient / N
         self.b.gradient = np.mean(Y.gradient, axis = 0)
-        X.gradient = np.mean(Y.gradient @ self.W.value.T, axis = 0)
+        # X.gradient = np.mean(Y.gradient @ self.W.value.T, axis = 0)
+        X.gradient = np.mean(Y.gradient @ self.W.value.T, axis = 0) * np.ones(X.value.shape) # TODO: to be checked
 
 
 class ReLU(Model):
