@@ -82,7 +82,6 @@ class ReLU(Model):
         """
             dE/dX = dE/dY * dY/dX = dE/dY * (X > 0)
         """
-        print(self.output.gradient.shape, self.output.value.shape)
         self.input.gradient = self.output.gradient * (self.output.value > 0)
 
 
