@@ -4,6 +4,7 @@ import numpy as np
 
 from ..data.dataset import *
 from ..data.samples import *
+from ..model import *
 
 
 class PCA:
@@ -51,4 +52,31 @@ class PCA:
     #     X_pca = self.project(X)
     #     X_reconstructed = self.reconstruct(X_pca)
     #     return mean_squared_error(X, X_reconstructed)
+
+
+class AutoEncoder:
+    def __init__(self, encoder: Model, decoder: Model):
+        self.encoder = encoder
+        self.decoder = decoder
+
+        self.whole_model = Sequential([self.encoder, self.decoder])
+
+    def model(self):
+        return self.whole_model
+    
+    @property
+    def M(self):
+        return self.model()
+
+    def encode(self, dataset: Dataset):
+        X = dataset.datas[0]
+        X_encoded = self.encoder(Variable(X)).value
+        data = np.hstack([X_encoded, dataset.datas[1]])
+        return Dataset(data = data, preprocess_func = label_split_for_single_output_dataset)
+    
+    def decode(self, dataset: Dataset):
+        X_encoded = dataset.datas[0]
+        X_decoded = self.decoder(Variable(X_encoded)).value
+        data = np.hstack([X_decoded, dataset.datas[1]])
+        return Dataset(data = data, preprocess_func = label_split_for_single_output_dataset)
 
